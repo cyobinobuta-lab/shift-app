@@ -481,3 +481,20 @@ body {
   #bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
   .screen      { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px); }
 }
+
+/* カレンダーセルの追加ヒント */
+.add-hint {
+  font-size: 9px;
+  color: #ccc;
+  text-align: center;
+  padding: 4px 0;
+}
+.day-cell-lg:hover .add-hint { color: var(--orange); }
+
+/* 従業員詳細カード */
+.detail-card {
+  background: #fff;
+  border: 0.5px solid #e8e8e8;
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+}

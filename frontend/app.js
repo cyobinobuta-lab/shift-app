@@ -311,7 +311,12 @@ Screen.Calendar = {
       this.allSchedules = res.data || [];
       if (Auth.isAdmin()) {
         const empRes = await API.getEmployees();
-        this.employees = empRes.data || [];
+        // 閲覧のみユーザーを除外
+        this.employees = (empRes.data || []).filter(e => e.role !== "viewer");
+      } else if (Auth.isViewer()) {
+        // 閲覧のみは全従業員のカレンダーを見られるが自分は表示しない
+        const empRes = await API.getEmployees();
+        this.employees = (empRes.data || []).filter(e => e.role !== "viewer");
       } else {
         const user = Auth.getUser();
         this.employees = [{ employeeId: user.employeeId, name: user.name }];
@@ -394,7 +399,8 @@ Screen.Calendar = {
       const sel = this.selEmp === emp.employeeId;
       const c = this.getEmpColor(emp.employeeId);
       const init = emp.name.charAt(0);
-      html += `<div class="av-item" onclick="Screen.Calendar.selectEmp('${emp.employeeId}')">
+      const isAdmin = Auth.isAdmin();
+      html += `<div class="av-item" onclick="${isAdmin ? `Screen.Calendar.showEmpDetail('${emp.employeeId}')` : `Screen.Calendar.selectEmp('${emp.employeeId}')`}">
         <div class="av-ring${sel?" av-sel":""}">
           <div class="av-face" style="background:${c.bg};color:${c.tc}">${init}</div>
         </div>
@@ -471,9 +477,12 @@ Screen.Calendar = {
       html += `</div><div class="day-cols-7">`;
       week.forEach(d => {
         const shifts = this.shiftsForDay(fmtDate(d));
-        html += `<div class="day-cell-lg">`;
+        const ds = fmtDate(d);
+        const canAdd = !Auth.isViewer();
+        html += `<div class="day-cell-lg" ${canAdd ? `onclick="Screen.Calendar.addFromCell('${ds}')" style="cursor:pointer"` : ""}>`;
         shifts.slice(0, 2).forEach(sh => html += this.buildShiftChip(sh));
         if (shifts.length > 2) html += `<div class="more-lbl">+${shifts.length - 2}</div>`;
+        if (canAdd && shifts.length === 0) html += `<div class="add-hint">+ 追加</div>`;
         html += `</div>`;
       });
       html += `</div></div>`;
@@ -559,6 +568,67 @@ Screen.Calendar = {
   },
   navigate(dir) { this.offsetWeeks += dir; this.renderCalendar(); },
   goToday()     { this.offsetWeeks = 0; this.renderCalendar(); },
+};
+
+
+
+// 管理者: 従業員詳細モーダル
+Screen.Calendar.showEmpDetail = function(empId) {
+  const emp = this.employees.find(e => e.employeeId === empId);
+  if (!emp) return;
+  const c = this.getEmpColor(empId);
+  const shifts = this.allSchedules
+    .filter(s => s.employeeId === empId)
+    .sort((a, b) => a.workDate > b.workDate ? 1 : -1);
+  const total = shifts.reduce((s, r) => s + r.hours, 0);
+
+  const panel = $("cal-emp-detail");
+  if (!panel) return;
+
+  if (panel.dataset.empId === empId && panel.style.display !== "none") {
+    panel.style.display = "none";
+    panel.dataset.empId = "";
+    this.selEmp = null;
+    this.renderAvatars();
+    this.renderCalendar();
+    return;
+  }
+
+  this.selEmp = empId;
+  this.renderAvatars();
+  this.renderCalendar();
+  panel.dataset.empId = empId;
+  panel.style.display = "block";
+
+  panel.innerHTML = `
+    <div class="detail-card" style="margin-top:10px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div style="width:36px;height:36px;border-radius:50%;background:${c.bg};color:${c.tc};display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:600">${emp.name.charAt(0)}</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--color-text-primary)">${emp.name}</div>
+          <div style="font-size:11px;color:var(--color-text-secondary)">合計 ${total.toFixed(1)}時間 / ${shifts.length}日登録</div>
+        </div>
+        <button onclick="$('cal-emp-detail').style.display='none';Screen.Calendar.selEmp=null;Screen.Calendar.renderAvatars();Screen.Calendar.renderCalendar();" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:16px;color:var(--color-text-secondary)">✕</button>
+      </div>
+      ${shifts.slice(0, 10).map(s => {
+        const parts = (s.workDate||"").split("-");
+        const mo = parseInt(parts[1])||1, dd = parseInt(parts[2])||1;
+        const wd = new Date(parseInt(parts[0])||2026, mo-1, dd);
+        const dns = ["日","月","火","水","木","金","土"];
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:0.5px solid #f0f0f0">
+          <span style="font-size:12px;color:var(--color-text-secondary)">${mo}/${dd}（${dns[wd.getDay()]}）</span>
+          <span style="font-size:12px;font-weight:600;color:var(--color-text-primary)">${(s.startTime||"").substring(0,5)}〜${(s.endTime||"").substring(0,5)}</span>
+          <span style="font-size:11px;color:#E8501A;font-weight:600">${s.hours.toFixed(1)}h</span>
+        </div>`;
+      }).join("")}
+      ${shifts.length > 10 ? `<div style="font-size:11px;color:var(--color-text-secondary);text-align:center;padding:6px 0">他 ${shifts.length-10} 件...</div>` : ""}
+    </div>`;
+};
+
+// カレンダーのセルから登録
+Screen.Calendar.addFromCell = function(dateStr) {
+  Screen.Register.init({ workDate: dateStr });
+  Router.go("screen-register");
 };
 
 // ============================================================
