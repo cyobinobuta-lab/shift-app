@@ -5,14 +5,17 @@
 // ---------- ユーティリティ ----------
 const $ = (id) => document.getElementById(id);
 
+function todayJST() {
+  const now = new Date();
+  const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return `${jst.getUTCFullYear()}-${String(jst.getUTCMonth()+1).padStart(2,"0")}-${String(jst.getUTCDate()).padStart(2,"0")}`;
+}
 function fmtDate(d) {
   if (typeof d === "string") {
-    // YYYY-MM-DD形式の文字列はそのまま返す
     if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
     const dt = new Date(d);
     return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
   }
-  // Dateオブジェクトはローカル時間で処理
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 function fmtJP(dateStr) {
@@ -349,11 +352,12 @@ Screen.Calendar = {
   },
 
   getStart() {
-    const today = new Date();
+    // JSTで今日の日付を取得
+    const now = new Date();
+    const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+    const today = new Date(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate());
     if (this.range === 4) {
-      // 現在の年月を基準にoffsetMonthsを加算
-      const base = new Date(today.getFullYear(), today.getMonth(), 1);
-      return new Date(base.getFullYear(), base.getMonth() + this.offsetMonths, 1);
+      return new Date(today.getFullYear(), today.getMonth() + this.offsetMonths, 1);
     }
     const dow = (today.getDay() + 6) % 7;
     const mon = new Date(today);
@@ -493,7 +497,7 @@ Screen.Calendar = {
       html += `<div class="day-cols-7">`;
       week.forEach(d => {
         const cl = this.dayHeadCls(d.getDay());
-        const isT = fmtDate(d) === fmtDate(new Date());
+        const isT = fmtDate(d) === todayJST();
         const numEl = isT
           ? `<span class="today-num">${d.getDate()}</span>`
           : `<span style="${cl}">${d.getDate()}</span>`;
@@ -523,7 +527,7 @@ Screen.Calendar = {
     html += `<div class="ow-head-row"><div class="ow-corner"></div>`;
     days.forEach(d => {
       const cl = this.dayHeadCls(d.getDay());
-      const isT = fmtDate(d) === fmtDate(new Date());
+      const isT = fmtDate(d) === todayJST();
       html += `<div class="ow-head-day" style="${cl}">
         <span>${this.DN[d.getDay()]}</span>
         ${isT ? `<span class="today-num sm">${d.getDate()}</span>` : `<span style="font-size:14px;font-weight:500">${d.getDate()}</span>`}
@@ -564,7 +568,7 @@ Screen.Calendar = {
         const ds = fmtDate(d);
         const isOther = refMonth >= 0 && d.getMonth() !== refMonth;
         const shifts = this.shiftsForDay(ds);
-        const isT = ds === fmtDate(new Date());
+        const isT = ds === todayJST();
         const cl = isOther ? "color:var(--color-border-secondary)"
           : d.getDay() === 0 ? "color:#E24B4A" : d.getDay() === 6 ? "color:#185FA5" : "color:var(--color-text-secondary)";
         const canAddMini = !Auth.isViewer();
