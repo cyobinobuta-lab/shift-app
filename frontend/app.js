@@ -309,15 +309,20 @@ Screen.Calendar = {
     try {
       const res = await API.getAllSchedules();
       this.allSchedules = res.data || [];
-      // admin・viewer・userともに全員のカレンダーを見られる
-      // ただし閲覧のみユーザーはアバターに表示しない
-      if (Auth.isAdmin() || Auth.isViewer()) {
+
+      if (Auth.isAdmin()) {
+        // 管理者はgetEmployeesで全員取得（閲覧者除く）
         const empRes = await API.getEmployees();
         this.employees = (empRes.data || []).filter(e => e.role !== "viewer");
       } else {
-        // 一般従業員は自分 + 管理者が許可した全員を表示
-        const empRes = await API.getEmployees();
-        this.employees = (empRes.data || []).filter(e => e.role !== "viewer");
+        // 一般従業員・閲覧者はスケジュールデータから従業員一覧を生成
+        const empMap = {};
+        (this.allSchedules || []).forEach(s => {
+          if (!empMap[s.employeeId]) {
+            empMap[s.employeeId] = { employeeId: s.employeeId, name: s.name };
+          }
+        });
+        this.employees = Object.values(empMap);
       }
       this.render();
     } catch(e) {
