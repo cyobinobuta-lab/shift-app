@@ -109,12 +109,6 @@ function initApp() {
       { id: "screen-admin-employees", label: "従業員",    icon: "people" },
     ]);
     Router.go("screen-admin-dashboard");
-  } else if (Auth.isViewer()) {
-    buildNav([
-      { id: "screen-calendar",    label: "カレンダー", icon: "cal" },
-      { id: "screen-admin-date",  label: "日付別",    icon: "list" },
-    ]);
-    Router.go("screen-calendar");
   } else {
     buildNav([
       { id: "screen-home",     label: "ホーム",    icon: "grid" },
