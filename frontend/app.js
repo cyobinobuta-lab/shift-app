@@ -309,17 +309,15 @@ Screen.Calendar = {
     try {
       const res = await API.getAllSchedules();
       this.allSchedules = res.data || [];
-      if (Auth.isAdmin()) {
-        const empRes = await API.getEmployees();
-        // 閲覧のみユーザーを除外
-        this.employees = (empRes.data || []).filter(e => e.role !== "viewer");
-      } else if (Auth.isViewer()) {
-        // 閲覧のみは全従業員のカレンダーを見られるが自分は表示しない
+      // admin・viewer・userともに全員のカレンダーを見られる
+      // ただし閲覧のみユーザーはアバターに表示しない
+      if (Auth.isAdmin() || Auth.isViewer()) {
         const empRes = await API.getEmployees();
         this.employees = (empRes.data || []).filter(e => e.role !== "viewer");
       } else {
-        const user = Auth.getUser();
-        this.employees = [{ employeeId: user.employeeId, name: user.name }];
+        // 一般従業員は自分 + 管理者が許可した全員を表示
+        const empRes = await API.getEmployees();
+        this.employees = (empRes.data || []).filter(e => e.role !== "viewer");
       }
       this.render();
     } catch(e) {
@@ -392,31 +390,33 @@ Screen.Calendar = {
   renderAvatars() {
     const strip = $("cal-avatar-strip");
     if (!strip) return;
-    const user = Auth.getUser();
+    const isAdmin = Auth.isAdmin();
 
     let html = "";
+    // 全員ボタン（先頭）
+    const allSel = this.selEmp === null;
+    html += `<div class="av-item" onclick="Screen.Calendar.selectEmp(null)">
+      <div class="av-ring${allSel?" av-sel":""}">
+        <div class="av-face" style="background:var(--color-background-secondary);font-size:10px;color:var(--color-text-secondary);font-weight:600">全</div>
+      </div>
+      <span class="av-name" style="font-size:9px;color:${allSel?"#E8501A":""}">全員</span>
+    </div>`;
+
     this.employees.forEach(emp => {
       const sel = this.selEmp === emp.employeeId;
       const c = this.getEmpColor(emp.employeeId);
       const init = emp.name.charAt(0);
-      const isAdmin = Auth.isAdmin();
-      html += `<div class="av-item" onclick="${isAdmin ? `Screen.Calendar.showEmpDetail('${emp.employeeId}')` : `Screen.Calendar.selectEmp('${emp.employeeId}')`}">
+      // 管理者はタップで詳細、それ以外はフィルター
+      const tapFn = isAdmin
+        ? `Screen.Calendar.showEmpDetail('${emp.employeeId}')`
+        : `Screen.Calendar.selectEmp('${emp.employeeId}')`;
+      html += `<div class="av-item" onclick="${tapFn}">
         <div class="av-ring${sel?" av-sel":""}">
           <div class="av-face" style="background:${c.bg};color:${c.tc}">${init}</div>
         </div>
-        <span class="av-name">${emp.name.split(" ")[0]}</span>
+        <span class="av-name" style="color:${sel?"#E8501A":""}">${emp.name.split(" ")[0]}</span>
       </div>`;
     });
-    // 全員ボタン
-    const allSel = this.selEmp === null;
-    html += `<div class="av-item" onclick="Screen.Calendar.selectEmp(null)">
-      <div class="av-ring${allSel?" av-sel":""}">
-        <div class="av-face" style="background:var(--color-background-secondary)">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="7" cy="7" r="5.5" stroke="var(--color-text-secondary)" stroke-width="1.2"/><path d="M4.5 7h5M7 4.5v5" stroke="var(--color-text-secondary)" stroke-width="1.2" stroke-linecap="round"/></svg>
-        </div>
-      </div>
-      <span class="av-name" style="font-size:9px">全員</span>
-    </div>`;
     strip.innerHTML = html;
   },
 
@@ -424,7 +424,12 @@ Screen.Calendar = {
     this.selEmp = (this.selEmp === id) ? null : id;
     this.renderAvatars();
     this.renderCalendar();
+    // 詳細パネルを閉じる
+    const p = $("cal-emp-detail");
+    if (p) p.style.display = "none";
   },
+
+
 
   renderCalendar() {
     const days = this.getDays();
@@ -479,10 +484,10 @@ Screen.Calendar = {
         const shifts = this.shiftsForDay(fmtDate(d));
         const ds = fmtDate(d);
         const canAdd = !Auth.isViewer();
-        html += `<div class="day-cell-lg" ${canAdd ? `onclick="Screen.Calendar.addFromCell('${ds}')" style="cursor:pointer"` : ""}>`;
+        html += `<div class="day-cell-lg" onclick="Screen.Calendar.cellClick('${ds}',event)" style="cursor:pointer">`;
         shifts.slice(0, 2).forEach(sh => html += this.buildShiftChip(sh));
         if (shifts.length > 2) html += `<div class="more-lbl">+${shifts.length - 2}</div>`;
-        if (canAdd && shifts.length === 0) html += `<div class="add-hint">+ 追加</div>`;
+        if (canAdd && shifts.length === 0) html += `<div class="add-hint">＋</div>`;
         html += `</div>`;
       });
       html += `</div></div>`;
@@ -625,7 +630,17 @@ Screen.Calendar.showEmpDetail = function(empId) {
     </div>`;
 };
 
-// カレンダーのセルから登録
+
+// セルクリック：登録可能なら登録フォームへ
+Screen.Calendar.cellClick = function(dateStr, e) {
+  e.stopPropagation();
+  if (!Auth.isViewer()) {
+    Screen.Register.init({ workDate: dateStr });
+    Router.go("screen-register");
+  }
+};
+
+// カレンダーのセルから登録（後方互換）
 Screen.Calendar.addFromCell = function(dateStr) {
   Screen.Register.init({ workDate: dateStr });
   Router.go("screen-register");
