@@ -60,4 +60,5 @@ const Auth = {
   getUser()   { const u = localStorage.getItem(this.KEY_USER); return u ? JSON.parse(u) : null; },
   isLoggedIn(){ return !!this.getToken(); },
   isAdmin()   { const u = this.getUser(); return u && u.role === "admin"; },
+  isViewer()  { const u = this.getUser(); return u && u.role === "viewer"; },
 };
