@@ -351,7 +351,9 @@ Screen.Calendar = {
   getStart() {
     const today = new Date();
     if (this.range === 4) {
-      return new Date(today.getFullYear(), today.getMonth() + this.offsetMonths, 1);
+      // 現在の年月を基準にoffsetMonthsを加算
+      const base = new Date(today.getFullYear(), today.getMonth(), 1);
+      return new Date(base.getFullYear(), base.getMonth() + this.offsetMonths, 1);
     }
     const dow = (today.getDay() + 6) % 7;
     const mon = new Date(today);
@@ -587,6 +589,9 @@ Screen.Calendar = {
 
   setRange(r) {
     this.range = r;
+    // 範囲を切り替えたらoffsetをリセット
+    this.offsetWeeks = 0;
+    this.offsetMonths = 0;
     document.querySelectorAll(".cal-rtab").forEach((b, i) => b.classList.toggle("active", [1,2,3,4][i] === r));
     this.renderCalendar();
   },
