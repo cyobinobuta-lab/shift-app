@@ -1,0 +1,483 @@
+/* ============================================================
+   勤務可能時間管理アプリ — スタイルシート
+   ============================================================ */
+
+:root {
+  --orange: #E8501A;
+  --orange-light: #FEF0EB;
+  --orange-dark: #B83D12;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --nav-h: 60px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  background: #f5f5f5;
+  color: #1a1a1a;
+  min-height: 100dvh;
+}
+
+/* ── レイアウト ── */
+.app-shell {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.screen {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  padding-bottom: calc(var(--nav-h) + 8px);
+  overflow-y: auto;
+}
+.screen.active { display: flex; }
+#screen-login { padding-bottom: 0; }
+
+/* ── トップバー ── */
+.top-bar {
+  background: var(--orange);
+  padding: 14px 16px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.top-bar-title { font-size: 15px; font-weight: 600; color: #fff; }
+.top-bar-user  { font-size: 12px; color: rgba(255,255,255,0.85); }
+.top-bar-logout {
+  font-size: 11px; color: rgba(255,255,255,0.8);
+  background: none; border: none; cursor: pointer; padding: 2px 6px;
+}
+
+/* ── ボトムナビ ── */
+#bottom-nav {
+  position: fixed;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  height: var(--nav-h);
+  background: #fff;
+  border-top: 0.5px solid #e0e0e0;
+  display: flex;
+  z-index: 100;
+}
+.nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 10px;
+  color: #999;
+  padding: 6px 4px;
+}
+.nav-btn.active { color: var(--orange); }
+.nav-btn svg { display: block; }
+
+/* ── スクリーン共通 ── */
+.screen-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── カード ── */
+.card {
+  background: #fff;
+  border: 0.5px solid #e8e8e8;
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+}
+.section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+/* ── メトリクス ── */
+.metric-row { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.metric {
+  background: #f7f7f7;
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+}
+.metric-label { font-size: 11px; color: #888; margin-bottom: 4px; }
+.metric-value { font-size: 24px; font-weight: 600; color: #1a1a1a; }
+.metric-sub   { font-size: 11px; color: #aaa; margin-top: 2px; }
+
+/* ── スケジュール行 ── */
+.schedule-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 0.5px solid #f0f0f0;
+}
+.schedule-item:last-child { border-bottom: none; }
+.sched-date-box {
+  width: 38px;
+  background: var(--orange-light);
+  border-radius: var(--radius-md);
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+.sched-month { font-size: 9px;  color: var(--orange); font-weight: 600; }
+.sched-day   { font-size: 18px; color: var(--orange); font-weight: 700; line-height: 1.1; }
+.sched-dow   { font-size: 9px;  color: var(--orange); }
+.sched-info  { flex: 1; }
+.sched-who   { font-size: 12px; font-weight: 600; color: #1a1a1a; margin-bottom: 2px; }
+.sched-time  { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.sched-hours { font-size: 11px; color: #888; margin-top: 2px; }
+.sched-tag   { font-size: 10px; padding: 3px 8px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+.tag-full    { background: #E1F5EE; color: #085041; }
+.tag-am      { background: #E6F1FB; color: #0C447C; }
+.tag-pm      { background: #FAEEDA; color: #633806; }
+.tag-custom  { background: #f0f0f0; color: #666; }
+
+/* ── ボタン ── */
+.btn-primary {
+  width: 100%;
+  padding: 13px;
+  background: var(--orange);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-primary:active { opacity: 0.9; transform: scale(0.99); }
+
+.btn-outline {
+  padding: 6px 12px;
+  background: none;
+  border: 0.5px solid #ccc;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  color: #444;
+}
+.btn-danger {
+  padding: 6px 12px;
+  background: none;
+  border: 0.5px solid #f09595;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  cursor: pointer;
+  color: #A32D2D;
+}
+.btn-sm { font-size: 11px; padding: 4px 8px; }
+
+/* ── フォーム ── */
+.form-row { margin-bottom: 12px; }
+.form-label { font-size: 12px; color: #666; margin-bottom: 4px; display: block; }
+.form-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 0.5px solid #ddd;
+  border-radius: var(--radius-md);
+  background: #fff;
+  color: #1a1a1a;
+  -webkit-appearance: none;
+}
+.form-input:focus { outline: none; border-color: var(--orange); }
+.time-row { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+
+/* ── クイックボタン ── */
+.quick-row { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.quick-btn {
+  border: 0.5px solid #ddd;
+  border-radius: var(--radius-md);
+  padding: 12px 8px;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+}
+.quick-btn.active { border-color: var(--orange); background: var(--orange-light); }
+.q-label { display: block; font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.quick-btn.active .q-label { color: var(--orange); }
+.q-time  { display: block; font-size: 10px; color: #999; margin-top: 2px; }
+.quick-btn.active .q-time { color: var(--orange); }
+
+/* ── 時間プレビュー ── */
+.hours-preview {
+  background: #f7f7f7;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.hours-preview-label { font-size: 12px; color: #888; }
+.hours-preview-value { font-size: 18px; font-weight: 700; color: var(--orange); }
+
+/* ── ログイン画面 ── */
+.login-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  gap: 0;
+  background: #f5f5f5;
+}
+.login-logo {
+  width: 60px; height: 60px;
+  background: var(--orange);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 16px;
+}
+.login-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+.login-sub   { font-size: 13px; color: #888; margin-bottom: 28px; }
+.login-card  {
+  width: 100%;
+  background: #fff;
+  border-radius: var(--radius-lg);
+  border: 0.5px solid #e8e8e8;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── カレンダー ── */
+.cal-range-tabs {
+  display: flex; gap: 3px;
+  background: #f0f0f0; padding: 3px;
+  border-radius: var(--radius-md);
+}
+.cal-rtab {
+  flex: 1; padding: 6px 2px;
+  font-size: 12px; font-weight: 600;
+  text-align: center; border: none; background: none; cursor: pointer;
+  border-radius: 7px; color: #888;
+}
+.cal-rtab.active { background: #fff; color: var(--orange); border: 0.5px solid #e8e8e8; }
+
+.cal-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.cal-arr {
+  width: 28px; height: 28px;
+  border: 0.5px solid #ddd; border-radius: var(--radius-sm);
+  background: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; color: #444;
+}
+.cal-period { flex: 1; font-size: 13px; font-weight: 600; color: #1a1a1a; text-align: center; }
+.cal-today-btn {
+  font-size: 11px; padding: 0 10px; height: 28px;
+  color: var(--orange); border: 0.5px solid var(--orange);
+  border-radius: var(--radius-sm); background: none; cursor: pointer;
+}
+
+.av-strip { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; scrollbar-width: none; }
+.av-strip::-webkit-scrollbar { display: none; }
+.av-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; flex-shrink: 0; }
+.av-ring {
+  width: 40px; height: 40px; border-radius: 50%;
+  padding: 2px; border: 2.5px solid transparent;
+}
+.av-sel { border-color: var(--orange); }
+.av-face {
+  width: 100%; height: 100%; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 600; overflow: hidden;
+}
+.av-face img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.av-name { font-size: 10px; color: #888; white-space: nowrap; }
+
+/* カレンダーグリッド共通 */
+.cal-card {
+  background: #fff;
+  border: 0.5px solid #e8e8e8;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.day-cols-7 { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); }
+.day-head {
+  padding: 5px 2px; text-align: center;
+  border-right: 0.5px solid #f0f0f0;
+  background: #fafafa;
+}
+.day-head:last-child { border-right: none; }
+.dh-dn { display: block; font-size: 10px; font-weight: 600; }
+.today-num {
+  display: inline-flex; width: 22px; height: 22px;
+  border-radius: 50%; background: var(--orange); color: #fff;
+  align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700;
+}
+.today-num.sm { width: 22px; height: 22px; font-size: 13px; }
+.today-num.mini { width: 18px; height: 18px; font-size: 10px; display: flex; margin: 0 auto 2px; }
+
+.day-cell-lg {
+  border-right: 0.5px solid #f0f0f0;
+  border-top: 0.5px solid #f0f0f0;
+  padding: 4px 3px;
+  min-height: 64px;
+}
+.day-cell-lg:last-child { border-right: none; }
+.day-cell-sm {
+  border-right: 0.5px solid #f0f0f0;
+  border-top: 0.5px solid #f0f0f0;
+  padding: 3px 2px;
+  min-height: 46px;
+}
+.day-cell-sm:last-child { border-right: none; }
+
+.shift-chip {
+  display: flex; align-items: center; gap: 2px;
+  border-radius: 4px; padding: 2px 4px; margin-bottom: 2px;
+}
+.chip-av {
+  width: 16px; height: 16px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; font-weight: 600; flex-shrink: 0; overflow: hidden;
+}
+.chip-av img { width: 100%; height: 100%; object-fit: cover; }
+.chip-info { display: flex; flex-direction: column; line-height: 1.2; overflow: hidden; min-width: 0; }
+.chip-name { font-size: 9px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip-time { font-size: 8px; white-space: nowrap; overflow: hidden; }
+.more-lbl  { font-size: 8px; color: #aaa; text-align: center; }
+
+/* 2週間 */
+.two-week-wrap { display: flex; flex-direction: column; }
+.week-block { border-bottom: 1.5px solid #e8e8e8; }
+.week-block:last-child { border-bottom: none; }
+.week-label-row {
+  background: #fafafa; padding: 5px 10px;
+  font-size: 11px; font-weight: 600; color: #888;
+  border-bottom: 0.5px solid #f0f0f0;
+}
+
+/* 1週間 */
+.ow-wrap { display: flex; flex-direction: column; }
+.ow-head-row { display: grid; grid-template-columns: 50px repeat(7, minmax(0,1fr)); background: #fafafa; }
+.ow-corner { border-right: 0.5px solid #f0f0f0; }
+.ow-head-day {
+  padding: 5px 2px; text-align: center;
+  border-right: 0.5px solid #f0f0f0;
+  font-size: 10px; font-weight: 600;
+}
+.ow-head-day:last-child { border-right: none; }
+.ow-row { display: grid; grid-template-columns: 50px repeat(7, minmax(0,1fr)); border-top: 0.5px solid #f0f0f0; }
+.ow-emp-cell {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  padding: 4px 6px; border-right: 0.5px solid #f0f0f0; background: #fafafa;
+}
+.ow-av {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600;
+}
+.ow-emp-name { font-size: 9px; font-weight: 600; color: #1a1a1a; text-align: center; }
+.ow-cell { border-right: 0.5px solid #f0f0f0; padding: 3px; min-height: 52px; display: flex; flex-direction: column; justify-content: center; }
+.ow-cell:last-child { border-right: none; }
+.ow-bar { border-radius: 4px; padding: 3px 4px; font-size: 9px; font-weight: 600; text-align: center; line-height: 1.4; }
+
+/* ミニカレンダー */
+.mini-cal-wrap {}
+.mini-head { background: #fafafa; }
+.mini-head-cell { padding: 4px 2px; text-align: center; font-size: 10px; font-weight: 600; border-right: 0.5px solid #f0f0f0; }
+.mini-head-cell:last-child { border-right: none; }
+
+/* ── 管理者画面 ── */
+.emp-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 0.5px solid #f0f0f0;
+}
+.emp-row:last-child { border-bottom: none; }
+.emp-rank {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--orange-light); color: var(--orange);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
+}
+.emp-name  { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.emp-sub   { font-size: 11px; color: #888; margin-top: 1px; }
+.emp-total { font-size: 15px; font-weight: 700; color: var(--orange); }
+
+.date-group { margin-bottom: 12px; }
+.date-group-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0; border-bottom: 0.5px solid #e8e8e8; margin-bottom: 4px;
+}
+.date-group-title { font-size: 13px; font-weight: 700; color: #1a1a1a; }
+.date-badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 20px;
+  background: var(--orange-light); color: var(--orange); font-weight: 600;
+}
+
+.emp-manage-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 0; border-bottom: 0.5px solid #f0f0f0;
+}
+.emp-manage-row:last-child { border-bottom: none; }
+
+.add-emp-form {
+  display: flex; flex-direction: column; gap: 10px; padding-top: 4px;
+}
+
+/* ── ローディング ── */
+#loading {
+  display: none;
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(255,255,255,0.7);
+  align-items: center; justify-content: center;
+}
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid #f0f0f0;
+  border-top-color: var(--orange);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── トースト ── */
+#toast {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #1a1a1a; color: #fff;
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 500;
+  opacity: 0; transition: all 0.25s ease;
+  pointer-events: none; white-space: nowrap; z-index: 300;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#toast.error { background: #E24B4A; }
+#toast.success { background: #1D9E75; }
+
+/* ── ページナビ行 ── */
+.page-nav-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.page-nav-row select {
+  padding: 6px 10px; font-size: 13px;
+  border: 0.5px solid #ddd; border-radius: var(--radius-sm);
+  background: #fff; color: #1a1a1a;
+}
+
+/* ── セーフエリア対応 ── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  #bottom-nav { padding-bottom: env(safe-area-inset-bottom); }
+  .screen      { padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 8px); }
+}

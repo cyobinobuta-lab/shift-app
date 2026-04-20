@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#E8501A">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>シフト管理</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- ローディング -->
+  <div id="loading"><div class="spinner"></div></div>
+  <div id="toast"></div>
+
+  <!-- ========== ログイン ========== -->
+  <div class="screen" id="screen-login">
+    <div class="login-wrap">
+      <div class="login-logo">
+        <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+          <rect x="4" y="7" width="22" height="16" rx="3" stroke="white" stroke-width="2"/>
+          <path d="M9 13h12M9 17h8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="login-title">シフト管理</div>
+      <div class="login-sub">勤務可能時間の登録・確認</div>
+      <div class="login-card">
+        <div class="form-row" style="margin-bottom:0">
+          <label class="form-label">名前</label>
+          <input class="form-input" id="login-name" type="text" placeholder="例：西尾 太郎" autocomplete="username">
+        </div>
+        <div class="form-row" style="margin-bottom:0">
+          <label class="form-label">パスワード</label>
+          <input class="form-input" id="login-pass" type="password" placeholder="••••••" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter')LoginScreen.submit()">
+        </div>
+        <button class="btn-primary" onclick="LoginScreen.submit()">ログイン</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 従業員ホーム ========== -->
+  <div class="screen" id="screen-home">
+    <div class="top-bar">
+      <span class="top-bar-title">シフト管理</span>
+      <span class="top-bar-user" id="home-user"></span>
+      <button class="top-bar-logout" onclick="handleLogout()">ログアウト</button>
+    </div>
+    <div class="screen-body">
+      <div class="metric-row">
+        <div class="metric">
+          <div class="metric-label">今月の登録時間</div>
+          <div class="metric-value" id="home-month-total">—</div>
+          <div class="metric-sub" id="home-month-label">読み込み中...</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">累計登録時間</div>
+          <div class="metric-value" id="home-all-total">—</div>
+          <div class="metric-sub">全期間 合計</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-label">直近の登録</div>
+        <div id="home-recent"><p style="color:#aaa;font-size:13px;text-align:center;padding:12px 0">読み込み中...</p></div>
+      </div>
+      <button class="btn-primary" onclick="Router.go('screen-register')">+ 勤務可能時間を登録</button>
+    </div>
+  </div>
+
+  <!-- ========== 登録フォーム ========== -->
+  <div class="screen" id="screen-register">
+    <div class="top-bar">
+      <span class="top-bar-title">勤務可能時間を登録</span>
+      <button class="top-bar-logout" onclick="Router.go('screen-home')">← 戻る</button>
+    </div>
+    <div class="screen-body">
+      <div class="card">
+        <div class="section-label">クイック登録</div>
+        <div class="quick-row" id="quick-btns"></div>
+      </div>
+      <div class="card">
+        <div class="form-row">
+          <label class="form-label">日付</label>
+          <input class="form-input" id="reg-date" type="date">
+        </div>
+        <div class="form-row">
+          <label class="form-label">時間</label>
+          <div class="time-row">
+            <input class="form-input" id="reg-start" type="time"
+              oninput="Screen.Register.calcPreview()">
+            <input class="form-input" id="reg-end" type="time"
+              oninput="Screen.Register.calcPreview()">
+          </div>
+        </div>
+        <div class="hours-preview">
+          <span class="hours-preview-label">登録時間</span>
+          <span class="hours-preview-value" id="reg-hours-preview">— 時間</span>
+        </div>
+        <div class="form-row" style="margin-bottom:0">
+          <label class="form-label">備考（任意）</label>
+          <input class="form-input" id="reg-note" type="text" placeholder="例：午後は用事があるため早退">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="Screen.Register.submit()">
+        <span id="reg-submit-label">登録する</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== 自分の登録一覧 ========== -->
+  <div class="screen" id="screen-my-list">
+    <div class="top-bar">
+      <span class="top-bar-title">登録一覧</span>
+      <span class="top-bar-user" id="mylist-total"></span>
+    </div>
+    <div class="screen-body">
+      <div class="page-nav-row">
+        <label style="font-size:12px;color:#888">月を選択</label>
+        <input type="month" id="mylist-month" style="padding:6px 10px;font-size:13px;border:0.5px solid #ddd;border-radius:6px"
+          onchange="Screen.MyList.changeMonth(this.value)">
+      </div>
+      <div class="card">
+        <div id="mylist-body"><p style="color:#aaa;font-size:13px;text-align:center;padding:16px 0">読み込み中...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== カレンダー (共通) ========== -->
+  <div class="screen" id="screen-calendar">
+    <div class="top-bar">
+      <span class="top-bar-title">カレンダー</span>
+      <button class="top-bar-logout" onclick="handleLogout()">ログアウト</button>
+    </div>
+    <div class="screen-body">
+
+      <div class="av-strip" id="cal-avatar-strip"></div>
+
+      <div class="cal-range-tabs">
+        <button class="cal-rtab" onclick="Screen.Calendar.setRange(1,this)">1週間</button>
+        <button class="cal-rtab active" onclick="Screen.Calendar.setRange(2,this)">2週間</button>
+        <button class="cal-rtab" onclick="Screen.Calendar.setRange(3,this)">3週間</button>
+        <button class="cal-rtab" onclick="Screen.Calendar.setRange(4,this)">1ヶ月</button>
+      </div>
+
+      <div class="cal-nav">
+        <button class="cal-arr" onclick="Screen.Calendar.navigate(-1)">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="cal-period" id="cal-period-label"></span>
+        <button class="cal-arr" onclick="Screen.Calendar.navigate(1)">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button class="cal-today-btn" onclick="Screen.Calendar.goToday()">今日</button>
+      </div>
+
+      <div class="cal-card" id="cal-grid"></div>
+    </div>
+  </div>
+
+  <!-- ========== 管理者ダッシュボード ========== -->
+  <div class="screen" id="screen-admin-dashboard">
+    <div class="top-bar">
+      <span class="top-bar-title">管理者ダッシュボード</span>
+      <span class="top-bar-user" id="admin-dash-user"></span>
+      <button class="top-bar-logout" onclick="handleLogout()">ログアウト</button>
+    </div>
+    <div class="screen-body">
+      <div class="metric-row">
+        <div class="metric">
+          <div class="metric-label">今月 登録人数</div>
+          <div class="metric-value" id="admin-head-count">—</div>
+          <div class="metric-sub" id="admin-month-label">読み込み中...</div>
+        </div>
+        <div class="metric">
+          <div class="metric-label">今月 合計時間</div>
+          <div class="metric-value" id="admin-total-hours">—</div>
+          <div class="metric-sub">全員合算</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-label">今月の登録時間ランキング</div>
+        <div id="admin-emp-summary"><p style="color:#aaa;font-size:13px;text-align:center;padding:16px 0">読み込み中...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 日付別一覧 ========== -->
+  <div class="screen" id="screen-admin-date">
+    <div class="top-bar">
+      <span class="top-bar-title">日付別スケジュール</span>
+    </div>
+    <div class="screen-body">
+      <p style="font-size:12px;color:#888">今後2週間の登録一覧</p>
+      <div id="admin-date-list"><p style="color:#aaa;font-size:13px;text-align:center;padding:20px 0">読み込み中...</p></div>
+    </div>
+  </div>
+
+  <!-- ========== 月別集計 ========== -->
+  <div class="screen" id="screen-admin-monthly">
+    <div class="top-bar">
+      <span class="top-bar-title">月別集計</span>
+      <span class="top-bar-user" id="admin-monthly-total"></span>
+    </div>
+    <div class="screen-body">
+      <div class="page-nav-row">
+        <label style="font-size:12px;color:#888">月を選択</label>
+        <input type="month" id="admin-monthly-month" style="padding:6px 10px;font-size:13px;border:0.5px solid #ddd;border-radius:6px"
+          onchange="Screen.AdminMonthly.changeMonth(this.value)">
+      </div>
+      <div class="card">
+        <div id="admin-monthly-list"><p style="color:#aaa;font-size:13px;text-align:center;padding:16px 0">読み込み中...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 従業員管理 ========== -->
+  <div class="screen" id="screen-admin-employees">
+    <div class="top-bar">
+      <span class="top-bar-title">従業員管理</span>
+    </div>
+    <div class="screen-body">
+      <div class="card">
+        <div class="section-label">従業員を追加</div>
+        <div class="add-emp-form">
+          <div>
+            <label class="form-label">名前</label>
+            <input class="form-input" id="new-emp-name" type="text" placeholder="例：田中 花子">
+          </div>
+          <div>
+            <label class="form-label">パスワード</label>
+            <input class="form-input" id="new-emp-pass" type="text" placeholder="初期パスワード">
+          </div>
+          <div>
+            <label class="form-label">権限</label>
+            <select class="form-input" id="new-emp-role">
+              <option value="user">一般従業員</option>
+              <option value="admin">管理者</option>
+            </select>
+          </div>
+          <button class="btn-primary" onclick="Screen.AdminEmployees.addEmployee()">追加する</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="section-label">登録済み従業員</div>
+        <div id="admin-emp-list"><p style="color:#aaa;font-size:13px;text-align:center;padding:16px 0">読み込み中...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ボトムナビ -->
+  <nav id="bottom-nav"></nav>
+
+</div>
+
+<script src="config.js"></script>
+<script src="api.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
