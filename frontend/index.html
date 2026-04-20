@@ -35,8 +35,11 @@
         </div>
         <div class="form-row" style="margin-bottom:0">
           <label class="form-label">パスワード</label>
-          <input class="form-input" id="login-pass" type="password" placeholder="••••••" autocomplete="current-password"
-            onkeydown="if(event.key==='Enter')LoginScreen.submit()">
+          <div style="position:relative">
+            <input class="form-input" id="login-pass" type="password" placeholder="••••••" autocomplete="current-password"
+              onkeydown="if(event.key==='Enter')LoginScreen.submit()" style="padding-right:48px">
+            <button type="button" onclick="togglePass()" id="pass-toggle" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#aaa;font-size:12px;padding:4px 6px">表示</button>
+          </div>
         </div>
         <button class="btn-primary" onclick="LoginScreen.submit()">ログイン</button>
       </div>

@@ -237,6 +237,7 @@ Screen.Register = {
         showToast("更新しました");
       } else {
         await API.addSchedule({ workDate, startTime, endTime, note });
+        Cache.clear();
         showToast("登録しました");
       }
       this.editingId = null;
@@ -789,6 +790,43 @@ async function handleLogout() {
     initApp();
   }
 }
+
+
+// ============================================================
+//  パスワード表示切り替え
+// ============================================================
+function togglePass() {
+  const inp = document.getElementById("login-pass");
+  const btn = document.getElementById("pass-toggle");
+  if (inp.type === "password") {
+    inp.type = "text";
+    btn.textContent = "隠す";
+    btn.style.color = "#E8501A";
+  } else {
+    inp.type = "password";
+    btn.textContent = "表示";
+    btn.style.color = "#aaa";
+  }
+}
+
+// ============================================================
+//  キャッシュ — GASへのリクエストを減らして速度改善
+// ============================================================
+const Cache = {
+  store: {},
+  set(key, data, ttl = 30000) {
+    this.store[key] = { data, expires: Date.now() + ttl };
+  },
+  get(key) {
+    const item = this.store[key];
+    if (!item || Date.now() > item.expires) return null;
+    return item.data;
+  },
+  clear(prefix = "") {
+    if (!prefix) { this.store = {}; return; }
+    Object.keys(this.store).forEach(k => { if (k.startsWith(prefix)) delete this.store[k]; });
+  }
+};
 
 // ---------- 起動 ----------
 document.addEventListener("DOMContentLoaded", initApp);
