@@ -312,7 +312,8 @@ Screen.MyList = {
 Screen.Calendar = {
   range: 2,
   offsetWeeks: 0,
-  offsetMonths: 0,
+  currentYear: new Date().getFullYear(),
+  currentMonth: new Date().getMonth(),
   selEmp: null,
   allSchedules: [],
   employees: [],
@@ -352,12 +353,9 @@ Screen.Calendar = {
   },
 
   getStart() {
-    // JSTで今日の日付を取得
-    const now = new Date();
-    const jst = new Date(now.getTime() + 9 * 60 * 60 * 1000);
-    const today = new Date(jst.getUTCFullYear(), jst.getUTCMonth(), jst.getUTCDate());
+    const today = new Date();
     if (this.range === 4) {
-      return new Date(today.getFullYear(), today.getMonth() + this.offsetMonths, 1);
+      return new Date(this.currentYear, this.currentMonth, 1);
     }
     const dow = (today.getDay() + 6) % 7;
     const mon = new Date(today);
@@ -593,20 +591,26 @@ Screen.Calendar = {
 
   setRange(r) {
     this.range = r;
-    // 範囲を切り替えたらoffsetをリセット
     this.offsetWeeks = 0;
-    this.offsetMonths = 0;
+    this.currentYear = new Date().getFullYear();
+    this.currentMonth = new Date().getMonth();
     document.querySelectorAll(".cal-rtab").forEach((b, i) => b.classList.toggle("active", [1,2,3,4][i] === r));
     this.renderCalendar();
   },
   navigate(dir) {
-    if (this.range === 4) { this.offsetMonths += dir; }
-    else { this.offsetWeeks += dir; }
+    if (this.range === 4) {
+      this.currentMonth += dir;
+      if (this.currentMonth > 11) { this.currentMonth = 0; this.currentYear++; }
+      if (this.currentMonth < 0)  { this.currentMonth = 11; this.currentYear--; }
+    } else {
+      this.offsetWeeks += dir;
+    }
     this.renderCalendar();
   },
   goToday() {
     this.offsetWeeks = 0;
-    this.offsetMonths = 0;
+    this.currentYear = new Date().getFullYear();
+    this.currentMonth = new Date().getMonth();
     this.renderCalendar();
   },
 };
