@@ -596,17 +596,18 @@ Screen.AdminDashboard = {
 //  Screen.AdminDate — 日付別一覧
 // ============================================================
 Screen.AdminDate = {
+  // 過去〜未来まで全期間表示
   async load() {
-    const today = fmtDate(new Date());
-    const end = fmtDate(new Date(new Date().setDate(new Date().getDate() + 14)));
+    const from = fmtDate(new Date(new Date().setDate(new Date().getDate() - 30)));
+    const to   = fmtDate(new Date(new Date().setDate(new Date().getDate() + 60)));
     showLoading(true);
     try {
-      const res = await API.getSchedulesByDate(today, end);
+      const res = await API.getSchedulesByDate(from, to);
       const byDate = res.data || {};
       const dates = Object.keys(byDate).sort();
 
       $("admin-date-list").innerHTML = dates.length === 0
-        ? `<p style="color:var(--color-text-secondary);font-size:13px;text-align:center;padding:20px 0">今後2週間の登録がありません</p>`
+        ? `<p style="color:var(--color-text-secondary);font-size:13px;text-align:center;padding:20px 0">登録がありません</p>`
         : dates.map(ds => {
             const shifts = byDate[ds];
             const dayTotal = shifts.reduce((s, r) => s + r.hours, 0);
@@ -615,7 +616,7 @@ Screen.AdminDate = {
                 <span class="date-group-title">${fmtJP(ds)}</span>
                 <span class="date-badge">${shifts.length}人 / ${Math.round(dayTotal * 10) / 10}h</span>
               </div>
-              ${shifts.map(r => scheduleItemHTML(r, false, false, true)).join("")}
+              ${shifts.map(r => adminScheduleItemHTML(r)).join("")}
             </div>`;
           }).join("");
     } catch(e) {
@@ -625,6 +626,69 @@ Screen.AdminDate = {
     }
   }
 };
+
+// 管理者用スケジュール行（編集・削除ボタン付き）
+function adminScheduleItemHTML(r) {
+  const parts = (r.workDate || "").split("-");
+  const y = parseInt(parts[0])||2026, mo = parseInt(parts[1])||1, dd = parseInt(parts[2])||1;
+  const d = new Date(y, mo - 1, dd);
+  const days = ["日","月","火","水","木","金","土"];
+  const startDisp = (r.startTime||"").substring(0,5);
+  const endDisp   = (r.endTime||"").substring(0,5);
+  const tagCls = r.hours >= 7 ? "tag-full" : (r.endTime||"") <= "12:30" ? "tag-am" : (r.startTime||"") >= "12:30" ? "tag-pm" : "tag-custom";
+  const tagLabel = r.hours >= 7 ? "1日" : (r.endTime||"") <= "12:30" ? "午前" : (r.startTime||"") >= "12:30" ? "午後" : "カスタム";
+
+  return `<div class="schedule-item">
+    <div class="sched-date-box">
+      <span class="sched-month">${mo}月</span>
+      <span class="sched-day">${dd}</span>
+      <span class="sched-dow">${days[d.getDay()]}</span>
+    </div>
+    <div class="sched-info">
+      <div class="sched-who">${r.name}</div>
+      <div class="sched-time">${startDisp} 〜 ${endDisp}</div>
+      <div class="sched-hours">${r.hours.toFixed(1)}時間${r.note ? " · " + r.note : ""}</div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+      <span class="sched-tag ${tagCls}">${tagLabel}</span>
+      <button class="btn-sm btn-outline" onclick="adminEditSchedule('${r.recordId}','${r.workDate}','${r.startTime}','${r.endTime}','${r.note||""}','${r.employeeId}','${r.name}')">編集</button>
+      <button class="btn-sm btn-danger" onclick="adminDeleteSchedule('${r.recordId}')">削除</button>
+    </div>
+  </div>`;
+}
+
+// 管理者による編集
+function adminEditSchedule(recordId, workDate, startTime, endTime, note, employeeId, name) {
+  const newDate  = prompt("日付（例：2026-04-25）", workDate);
+  if (!newDate) return;
+  const newStart = prompt("開始時間（例：09:00）", startTime.substring(0,5));
+  if (!newStart) return;
+  const newEnd   = prompt("終了時間（例：17:00）", endTime.substring(0,5));
+  if (!newEnd) return;
+  const newNote  = prompt("備考（任意）", note);
+
+  showLoading(true);
+  API.updateSchedule({ recordId, workDate: newDate, startTime: newStart, endTime: newEnd, note: newNote || "" })
+    .then(() => { Cache.clear(); showToast("更新しました"); Screen.AdminDate.load(); })
+    .catch(e => showToast(e.message, "error"))
+    .finally(() => showLoading(false));
+}
+
+// 管理者による削除
+async function adminDeleteSchedule(recordId) {
+  if (!confirm("この登録を削除しますか？")) return;
+  showLoading(true);
+  try {
+    await API.deleteSchedule(recordId);
+    Cache.clear();
+    showToast("削除しました");
+    Screen.AdminDate.load();
+  } catch(e) {
+    showToast(e.message, "error");
+  } finally {
+    showLoading(false);
+  }
+}
 
 // ============================================================
 //  Screen.AdminMonthly — 月別集計
