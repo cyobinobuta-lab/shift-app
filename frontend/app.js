@@ -109,6 +109,12 @@ function initApp() {
       { id: "screen-admin-employees", label: "従業員",    icon: "people" },
     ]);
     Router.go("screen-admin-dashboard");
+  } else if (Auth.isViewer()) {
+    buildNav([
+      { id: "screen-calendar",   label: "カレンダー", icon: "cal" },
+      { id: "screen-admin-date", label: "日付別",    icon: "list" },
+    ]);
+    Router.go("screen-calendar");
   } else {
     buildNav([
       { id: "screen-home",     label: "ホーム",    icon: "grid" },
@@ -773,8 +779,11 @@ Screen.AdminEmployees = {
   },
 
   async editRole(empId, name, currentRole) {
-    const newRole = currentRole === "admin" ? "user" : "admin";
-    if (!confirm(`${name} を「${newRole === "admin" ? "管理者" : "一般従業員"}」に変更しますか？`)) return;
+    const roles = ["user", "viewer", "admin"];
+    const labels = { user: "一般従業員", viewer: "閲覧のみ", admin: "管理者" };
+    const nextRole = roles[(roles.indexOf(currentRole) + 1) % roles.length];
+    if (!confirm(`${name} を「${labels[nextRole]}」に変更しますか？`)) return;
+    const newRole = nextRole;
     showLoading(true);
     try {
       await API.updateEmployee({ employeeId: empId, role: newRole });
