@@ -163,8 +163,8 @@ Screen.Home = {
       $("home-all-total").textContent = `${data.length}日`;
       $("home-days-label").textContent = `${month.replace("-","年")}月 登録済み`;
 
-      // 直近3件
-      const recent = data.slice(-3).reverse();
+      // 直近30件
+      const recent = data.slice(-30).reverse();
       $("home-recent").innerHTML = recent.length === 0
         ? `<p style="color:var(--color-text-secondary);font-size:13px;text-align:center;padding:12px 0">まだ登録がありません</p>`
         : recent.map(r => scheduleItemHTML(r, true)).join("");
