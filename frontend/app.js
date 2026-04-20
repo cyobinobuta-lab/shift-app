@@ -740,20 +740,25 @@ Screen.AdminEmployees = {
 //  共通 — スケジュールアイテムHTML
 // ============================================================
 function scheduleItemHTML(r, compact = false, showActions = false, showName = false) {
-  const d = new Date(r.workDate);
+  // タイムゾーンずれを防ぐためにYYYY-MM-DDを直接パース
+  const parts = (r.workDate || "").split("-");
+  const y = parseInt(parts[0])||2026, mo = parseInt(parts[1])||1, dd = parseInt(parts[2])||1;
+  const d = new Date(y, mo - 1, dd);
   const days = ["日","月","火","水","木","金","土"];
-  const tagCls = r.hours >= 7 ? "tag-full" : r.endTime <= "12:30" ? "tag-am" : r.startTime >= "12:30" ? "tag-pm" : "tag-custom";
-  const tagLabel = r.hours >= 7 ? "1日" : r.endTime <= "12:30" ? "午前" : r.startTime >= "12:30" ? "午後" : "カスタム";
+  const tagCls = r.hours >= 7 ? "tag-full" : (r.endTime||"") <= "12:30" ? "tag-am" : (r.startTime||"") >= "12:30" ? "tag-pm" : "tag-custom";
+  const tagLabel = r.hours >= 7 ? "1日" : (r.endTime||"") <= "12:30" ? "午前" : (r.startTime||"") >= "12:30" ? "午後" : "カスタム";
+  const startDisp = (r.startTime||"").substring(0,5);
+  const endDisp   = (r.endTime||"").substring(0,5);
 
   return `<div class="schedule-item">
     <div class="sched-date-box">
-      <span class="sched-month">${d.getMonth()+1}月</span>
-      <span class="sched-day">${d.getDate()}</span>
+      <span class="sched-month">${mo}月</span>
+      <span class="sched-day">${dd}</span>
       <span class="sched-dow">${days[d.getDay()]}</span>
     </div>
     <div class="sched-info">
       ${showName ? `<div class="sched-who">${r.name}</div>` : ""}
-      <div class="sched-time">${r.startTime} 〜 ${r.endTime}</div>
+      <div class="sched-time">${startDisp} 〜 ${endDisp}</div>
       <div class="sched-hours">${r.hours.toFixed(1)}時間${r.note ? " · " + r.note : ""}</div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
