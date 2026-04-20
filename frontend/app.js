@@ -203,8 +203,7 @@ Screen.Register = {
 
   init(params = {}) {
     this.editingId = params.recordId || null;
-    const today = fmtDate(new Date());
-    $("reg-date").value = params.workDate || today;
+    $("reg-date").value = params.workDate || todayJST();
     $("reg-start").value = params.startTime || "";
     $("reg-end").value   = params.endTime   || "";
     $("reg-note").value  = params.note      || "";
@@ -551,7 +550,7 @@ Screen.Calendar = {
   },
 
   buildMiniCal(days) {
-    const refMonth = this.range === 4 ? this.getStart().getMonth() : -1;
+    const refMonth = this.range === 4 ? this.calMonth : -1;
     let html = `<div class="mini-cal-wrap">`;
     html += `<div class="day-cols-7 mini-head">`;
     this.DN.forEach((n, i) => {
