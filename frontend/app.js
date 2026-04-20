@@ -103,10 +103,18 @@ function initApp() {
       { id: "screen-admin-dashboard", label: "ホーム",    icon: "grid" },
       { id: "screen-calendar",        label: "カレンダー", icon: "cal" },
       { id: "screen-admin-date",      label: "日付別",    icon: "list" },
+      { id: "screen-register",        label: "登録",      icon: "plus" },
+      { id: "screen-my-list",         label: "自分",      icon: "cal" },
       { id: "screen-admin-monthly",   label: "月集計",    icon: "chart" },
       { id: "screen-admin-employees", label: "従業員",    icon: "people" },
     ]);
     Router.go("screen-admin-dashboard");
+  } else if (Auth.isViewer()) {
+    buildNav([
+      { id: "screen-calendar",    label: "カレンダー", icon: "cal" },
+      { id: "screen-admin-date",  label: "日付別",    icon: "list" },
+    ]);
+    Router.go("screen-calendar");
   } else {
     buildNav([
       { id: "screen-home",     label: "ホーム",    icon: "grid" },
@@ -736,7 +744,7 @@ Screen.AdminEmployees = {
         <div class="emp-manage-row">
           <div style="flex:1">
             <div class="emp-name">${emp.name}</div>
-            <div class="emp-sub">${emp.role === "admin" ? "管理者" : "一般従業員"}</div>
+            <div class="emp-sub">${emp.role === "admin" ? "管理者" : emp.role === "viewer" ? "閲覧のみ" : "一般従業員"}</div>
           </div>
           <div style="display:flex;gap:6px">
             <button class="btn-sm btn-outline" onclick="Screen.AdminEmployees.editRole('${emp.employeeId}','${emp.name}','${emp.role}')">権限</button>

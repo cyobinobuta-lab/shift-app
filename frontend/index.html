@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>シフト管理</title>
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -197,7 +197,7 @@
       <span class="top-bar-title">日付別スケジュール</span>
     </div>
     <div class="screen-body">
-      <p style="font-size:12px;color:#888">今後2週間の登録一覧</p>
+      <p style="font-size:12px;color:#888">過去30日〜今後60日の登録一覧</p>
       <div id="admin-date-list"><p style="color:#aaa;font-size:13px;text-align:center;padding:20px 0">読み込み中...</p></div>
     </div>
   </div>
@@ -241,6 +241,7 @@
             <label class="form-label">権限</label>
             <select class="form-input" id="new-emp-role">
               <option value="user">一般従業員</option>
+              <option value="viewer">閲覧のみ</option>
               <option value="admin">管理者</option>
             </select>
           </div>
@@ -259,8 +260,8 @@
 
 </div>
 
-<script src="config.js?v=2"></script>
-<script src="api.js?v=2"></script>
-<script src="app.js?v=2"></script>
+<script src="config.js?v=4"></script>
+<script src="api.js?v=4"></script>
+<script src="app.js?v=4"></script>
 </body>
 </html>
