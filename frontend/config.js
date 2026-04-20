@@ -3,7 +3,7 @@
 // ============================================================
 const CONFIG = {
   // GASをWebアプリとして公開したときのURLを貼り付ける
-  GAS_URL: "https://script.google.com/macros/s/AKfycbyUownyTLBWL9Ru-HckHQMioG7R_QyPToMbt82FoJl7PYkb2z3Fd5VbdGvqPhBHD2fh/exec",
+  GAS_URL: "https://script.google.com/macros/library/d/1P-1MpdMihADgrzgeEsS90kTRxQcgMfOqmFLNAuSwOPo6W57EEFCSDkfq/3",
 
   // クイック登録の時間設定
   QUICK_PRESETS: [
