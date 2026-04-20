@@ -300,6 +300,7 @@ Screen.MyList = {
 Screen.Calendar = {
   range: 2,
   offsetWeeks: 0,
+  offsetMonths: 0,
   selEmp: null,
   allSchedules: [],
   employees: [],
@@ -340,6 +341,9 @@ Screen.Calendar = {
 
   getStart() {
     const today = new Date();
+    if (this.range === 4) {
+      return new Date(today.getFullYear(), today.getMonth() + this.offsetMonths, 1);
+    }
     const dow = (today.getDay() + 6) % 7;
     const mon = new Date(today);
     mon.setDate(today.getDate() - dow + this.offsetWeeks * 7);
@@ -552,7 +556,8 @@ Screen.Calendar = {
         const isT = ds === fmtDate(new Date());
         const cl = isOther ? "color:var(--color-border-secondary)"
           : d.getDay() === 0 ? "color:#E24B4A" : d.getDay() === 6 ? "color:#185FA5" : "color:var(--color-text-secondary)";
-        html += `<div class="day-cell-sm">`;
+        const canAddMini = !Auth.isViewer();
+        html += `<div class="day-cell-sm" ${canAddMini?`onclick="Screen.Calendar.cellClick('${ds}',event)" style="cursor:pointer"`:""}>`;
         html += isT
           ? `<div class="today-num mini">${d.getDate()}</div>`
           : `<div style="font-size:10px;font-weight:500;${cl};text-align:center;margin-bottom:2px">${d.getDate()}</div>`;
@@ -576,8 +581,16 @@ Screen.Calendar = {
     document.querySelectorAll(".cal-rtab").forEach((b, i) => b.classList.toggle("active", [1,2,3,4][i] === r));
     this.renderCalendar();
   },
-  navigate(dir) { this.offsetWeeks += dir; this.renderCalendar(); },
-  goToday()     { this.offsetWeeks = 0; this.renderCalendar(); },
+  navigate(dir) {
+    if (this.range === 4) { this.offsetMonths += dir; }
+    else { this.offsetWeeks += dir; }
+    this.renderCalendar();
+  },
+  goToday() {
+    this.offsetWeeks = 0;
+    this.offsetMonths = 0;
+    this.renderCalendar();
+  },
 };
 
 
@@ -638,7 +651,7 @@ Screen.Calendar.showEmpDetail = function(empId) {
 
 // セルクリック：登録可能なら登録フォームへ
 Screen.Calendar.cellClick = function(dateStr, e) {
-  e.stopPropagation();
+  if (e) e.stopPropagation();
   if (!Auth.isViewer()) {
     Screen.Register.init({ workDate: dateStr });
     Router.go("screen-register");
