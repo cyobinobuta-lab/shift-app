@@ -833,5 +833,13 @@ const Cache = {
   }
 };
 
+// ============================================================
+//  GASウォームアップ — 起動時にpingを送って速度改善
+// ============================================================
+function warmupGAS() {
+  fetch(`${CONFIG.GAS_URL}?action=ping&token=`)
+    .catch(() => {});
+}
+
 // ---------- 起動 ----------
-document.addEventListener("DOMContentLoaded", initApp);
+document.addEventListener("DOMContentLoaded", () => { warmupGAS(); initApp(); });
