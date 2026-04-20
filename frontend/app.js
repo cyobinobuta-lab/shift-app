@@ -6,14 +6,22 @@
 const $ = (id) => document.getElementById(id);
 
 function fmtDate(d) {
-  const dt = typeof d === "string" ? new Date(d) : d;
-  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
+  if (typeof d === "string") {
+    // YYYY-MM-DD形式の文字列はそのまま返す
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    const dt = new Date(d);
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
+  }
+  // Dateオブジェクトはローカル時間で処理
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 function fmtJP(dateStr) {
   if (!dateStr) return "";
-  const d = new Date(dateStr);
+  const parts = dateStr.split("-");
+  const y = parseInt(parts[0]), mo = parseInt(parts[1])-1, dd = parseInt(parts[2]);
+  const d = new Date(y, mo, dd);
   const days = ["日","月","火","水","木","金","土"];
-  return `${d.getMonth()+1}月${d.getDate()}日（${days[d.getDay()]}）`;
+  return `${mo+1}月${dd}日（${days[d.getDay()]}）`;
 }
 function calcHours(start, end) {
   if (!start || !end) return 0;
@@ -283,9 +291,10 @@ Screen.MyList = {
     const total = this.data.reduce((s, r) => s + r.hours, 0);
     $("mylist-total").textContent = `合計 ${Math.round(total * 10) / 10} 時間`;
 
+    const canEdit = !Auth.isViewer();
     $("mylist-body").innerHTML = this.data.length === 0
       ? `<p style="color:var(--color-text-secondary);font-size:13px;text-align:center;padding:20px 0">登録がありません</p>`
-      : this.data.map(r => scheduleItemHTML(r, false, true)).join("");
+      : this.data.map(r => scheduleItemHTML(r, false, canEdit)).join("");
   },
 
   changeMonth(val) {
@@ -762,8 +771,10 @@ function adminScheduleItemHTML(r) {
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
       <span class="sched-tag ${tagCls}">${tagLabel}</span>
+      ${Auth.isAdmin() ? `
       <button class="btn-sm btn-outline" onclick="adminEditSchedule('${r.recordId}','${r.workDate}','${r.startTime}','${r.endTime}','${r.note||""}','${r.employeeId}','${r.name}')">編集</button>
       <button class="btn-sm btn-danger" onclick="adminDeleteSchedule('${r.recordId}')">削除</button>
+      ` : ""}
     </div>
   </div>`;
 }
@@ -950,6 +961,7 @@ function scheduleItemHTML(r, compact = false, showActions = false, showName = fa
 }
 
 async function deleteSchedule(recordId) {
+  if (Auth.isViewer()) { showToast("閲覧のみモードでは削除できません", "error"); return; }
   if (!confirm("この登録を削除しますか？")) return;
   showLoading(true);
   try {
