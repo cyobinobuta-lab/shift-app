@@ -380,7 +380,7 @@ Screen.Calendar = {
     const s = days[0], e = days[days.length - 1];
     const fmt = d => `${d.getMonth()+1}月${d.getDate()}日`;
     $("cal-period-label").textContent = this.range === 4
-      ? `${s.getMonth()+1}月`
+      ? `${this.calMonth + 1}月`
       : `${fmt(s)}〜${fmt(e)}`;
   },
 
