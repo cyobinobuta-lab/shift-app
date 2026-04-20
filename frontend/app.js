@@ -674,15 +674,13 @@ Screen.Calendar.showEmpDetail = function(empId) {
 Screen.Calendar.cellClick = function(dateStr, e) {
   if (e) e.stopPropagation();
   if (!Auth.isViewer()) {
-    Screen.Register.init({ workDate: dateStr });
-    Router.go("screen-register");
+    Router.go("screen-register", { workDate: dateStr });
   }
 };
 
 // カレンダーのセルから登録（後方互換）
 Screen.Calendar.addFromCell = function(dateStr) {
-  Screen.Register.init({ workDate: dateStr });
-  Router.go("screen-register");
+  Router.go("screen-register", { workDate: dateStr });
 };
 
 // ============================================================
