@@ -313,7 +313,7 @@ Screen.Calendar = {
   range: 2,
   offsetWeeks: 0,
   currentYear: new Date().getFullYear(),
-  currentMonth: new Date().getMonth(),
+  calMonth: new Date().getMonth(),
   selEmp: null,
   allSchedules: [],
   employees: [],
@@ -355,7 +355,7 @@ Screen.Calendar = {
   getStart() {
     const today = new Date();
     if (this.range === 4) {
-      return new Date(this.currentYear, this.currentMonth, 1);
+      return new Date(this.currentYear, this.calMonth, 1);
     }
     const dow = (today.getDay() + 6) % 7;
     const mon = new Date(today);
@@ -593,15 +593,15 @@ Screen.Calendar = {
     this.range = r;
     this.offsetWeeks = 0;
     this.currentYear = new Date().getFullYear();
-    this.currentMonth = new Date().getMonth();
+    this.calMonth = new Date().getMonth();
     document.querySelectorAll(".cal-rtab").forEach((b, i) => b.classList.toggle("active", [1,2,3,4][i] === r));
     this.renderCalendar();
   },
   navigate(dir) {
     if (this.range === 4) {
-      this.currentMonth += dir;
-      if (this.currentMonth > 11) { this.currentMonth = 0; this.currentYear++; }
-      if (this.currentMonth < 0)  { this.currentMonth = 11; this.currentYear--; }
+      this.calMonth += dir;
+      if (this.calMonth > 11) { this.calMonth = 0; this.currentYear++; }
+      if (this.calMonth < 0)  { this.calMonth = 11; this.currentYear--; }
     } else {
       this.offsetWeeks += dir;
     }
@@ -610,7 +610,7 @@ Screen.Calendar = {
   goToday() {
     this.offsetWeeks = 0;
     this.currentYear = new Date().getFullYear();
-    this.currentMonth = new Date().getMonth();
+    this.calMonth = new Date().getMonth();
     this.renderCalendar();
   },
 };
