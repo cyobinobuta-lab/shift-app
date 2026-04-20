@@ -95,7 +95,8 @@ function initApp() {
     return;
   }
   const user = Auth.getUser();
-  $("nav-user-name").textContent = user.name;
+  const navUserName = $("nav-user-name");
+  if (navUserName) navUserName.textContent = user.name;
 
   if (Auth.isAdmin()) {
     buildNav([
