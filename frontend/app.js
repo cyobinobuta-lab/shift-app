@@ -159,9 +159,9 @@ Screen.Home = {
       $("home-month-label").textContent = `${month.replace("-","年")}月 · ${data.length}日登録`;
 
       // 累計
-      const all = await API.getMySchedules();
-      const allTotal = (all.data || []).reduce((s, r) => s + r.hours, 0);
-      $("home-all-total").textContent = `${Math.round(allTotal * 10) / 10}h`;
+      // 今月の日数表示
+      $("home-all-total").textContent = `${data.length}日`;
+      $("home-days-label").textContent = `${month.replace("-","年")}月 登録済み`;
 
       // 直近3件
       const recent = data.slice(-3).reverse();
