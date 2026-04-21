@@ -7,7 +7,10 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>シフト管理</title>
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<link rel="stylesheet" href="style.css?v=21">
 </head>
 <body>
 
@@ -256,13 +259,27 @@
     </div>
   </div>
 
+
+  <!-- ========== 操作履歴 ========== -->
+  <div class="screen" id="screen-admin-logs">
+    <div class="top-bar">
+      <span class="top-bar-title">操作履歴</span>
+    </div>
+    <div class="screen-body">
+      <p style="font-size:12px;color:#888">直近100件の登録・編集・削除履歴</p>
+      <div class="card">
+        <div id="admin-logs-list"><p style="color:#aaa;font-size:13px;text-align:center;padding:16px 0">読み込み中...</p></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ボトムナビ -->
   <nav id="bottom-nav"></nav>
 
 </div>
 
-<script src="config.js?v=19"></script>
-<script src="api.js?v=19"></script>
-<script src="app.js?v=19"></script>
+<script src="config.js?v=21"></script>
+<script src="api.js?v=21"></script>
+<script src="app.js?v=21"></script>
 </body>
 </html>
