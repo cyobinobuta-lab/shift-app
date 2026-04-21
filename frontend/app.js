@@ -65,6 +65,7 @@ const Router = {
     if (screenId === "screen-admin-employees") Screen.AdminEmployees.load();
     if (screenId === "screen-admin-date") Screen.AdminDate.load();
     if (screenId === "screen-admin-monthly") Screen.AdminMonthly.load();
+    if (screenId === "screen-admin-logs")    Screen.AdminLogs.load();
     this.updateNav(screenId);
   },
   updateNav(screenId) {
@@ -115,9 +116,10 @@ function initApp() {
       { id: "screen-calendar",        label: "カレンダー", icon: "cal" },
       { id: "screen-admin-date",      label: "日付別",    icon: "list" },
       { id: "screen-register",        label: "登録",      icon: "plus" },
-      { id: "screen-my-list",         label: "自分",      icon: "cal" },
+      { id: "screen-my-list",         label: "自分",      icon: "list" },
       { id: "screen-admin-monthly",   label: "月集計",    icon: "chart" },
       { id: "screen-admin-employees", label: "従業員",    icon: "people" },
+      { id: "screen-admin-logs",      label: "履歴",      icon: "log" },
     ]);
     Router.go("screen-admin-dashboard");
   } else if (Auth.isViewer()) {
@@ -155,6 +157,7 @@ function navIcon(name) {
     list:   `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="4" width="16" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M2 8h16" stroke="currentColor" stroke-width="1.5"/><path d="M7 2v3M13 2v3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
     chart:  `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="11" width="3" height="6" rx="1" fill="currentColor"/><rect x="8" y="7" width="3" height="10" rx="1" fill="currentColor"/><rect x="13" y="4" width="3" height="13" rx="1" fill="currentColor"/></svg>`,
     people: `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="8" cy="7" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M2 17c0-3.314 2.686-6 6-6s6 2.686 6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M14 4a3 3 0 010 6M18 17c0-2.761-1.79-5.12-4.25-5.84" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+    log:    `<svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 7h6M7 10h6M7 13h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`,
   };
   return icons[name] || "";
 }
@@ -927,6 +930,39 @@ Screen.AdminEmployees = {
       await API.deleteEmployee(empId);
       showToast("削除しました");
       this.load();
+    } catch(e) {
+      showToast(e.message, "error");
+    } finally {
+      showLoading(false);
+    }
+  }
+};
+
+
+// ============================================================
+//  Screen.AdminLogs — 操作履歴
+// ============================================================
+Screen.AdminLogs = {
+  async load() {
+    showLoading(true);
+    try {
+      const res = await API.getLogs();
+      const logs = res.data || [];
+      $("admin-logs-list").innerHTML = logs.length === 0
+        ? `<p style="color:var(--color-text-secondary);font-size:13px;text-align:center;padding:20px 0">履歴がありません</p>`
+        : logs.map(log => {
+            const dt = log.createdAt ? log.createdAt.substring(0,16).replace("T"," ") : "";
+            const color = log.action === "登録" ? "#1D9E75" : log.action === "編集" ? "#185FA5" : "#A32D2D";
+            const bg    = log.action === "登録" ? "#E1F5EE" : log.action === "編集" ? "#E6F1FB" : "#FCEBEB";
+            return `<div class="log-row">
+              <span class="log-badge" style="background:${bg};color:${color}">${log.action}</span>
+              <div class="log-info">
+                <div class="log-name">${log.name}</div>
+                <div class="log-detail">${log.detail}</div>
+              </div>
+              <div class="log-time">${dt}</div>
+            </div>`;
+          }).join("");
     } catch(e) {
       showToast(e.message, "error");
     } finally {

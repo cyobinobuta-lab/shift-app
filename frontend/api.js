@@ -39,6 +39,7 @@ const API = {
   addEmployee:        (data)             => API.post("addEmployee", data),
   updateEmployee:     (data)             => API.post("updateEmployee", data),
   deleteEmployee:     (employeeId)       => API.post("deleteEmployee", { employeeId }),
+  getLogs:            ()                 => API.get("getLogs"),
 };
 
 // ============================================================
