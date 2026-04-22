@@ -256,6 +256,7 @@ Screen.Register = {
     try {
       if (this.editingId) {
         await API.updateSchedule({ recordId: this.editingId, workDate, startTime, endTime, note });
+        Cache.clear();
         showToast("更新しました");
       } else {
         await API.addSchedule({ workDate, startTime, endTime, note });
@@ -324,7 +325,14 @@ Screen.Calendar = {
   async load() {
     showLoading(true);
     try {
-      const res = await API.getAllSchedules();
+      const cached = Cache.get("allSchedules");
+      let res;
+      if (cached) {
+        res = { data: cached };
+      } else {
+        res = await API.getAllSchedules();
+        if (res.data) Cache.set("allSchedules", res.data);
+      }
       this.allSchedules = res.data || [];
 
       if (Auth.isAdmin()) {
@@ -736,7 +744,15 @@ Screen.AdminDate = {
     const to   = fmtDate(new Date(new Date().setDate(new Date().getDate() + 60)));
     showLoading(true);
     try {
-      const res = await API.getSchedulesByDate(from, to);
+      const cacheKey = "schedByDate:" + from + "-" + to;
+      let res;
+      const cached = Cache.get(cacheKey);
+      if (cached) {
+        res = { data: cached };
+      } else {
+        res = await API.getSchedulesByDate(from, to);
+        if (res.data) Cache.set(cacheKey, res.data);
+      }
       const byDate = res.data || {};
       const dates = Object.keys(byDate).sort();
 
@@ -816,6 +832,7 @@ async function adminDeleteSchedule(recordId) {
   showLoading(true);
   try {
     await API.deleteSchedule(recordId);
+    Cache.clear();
     Cache.clear();
     showToast("削除しました");
     Screen.AdminDate.load();
@@ -1013,6 +1030,7 @@ async function deleteSchedule(recordId) {
   showLoading(true);
   try {
     await API.deleteSchedule(recordId);
+    Cache.clear();
     showToast("削除しました");
     Screen.MyList.load();
   } catch(e) {
@@ -1056,7 +1074,7 @@ function togglePass() {
 // ============================================================
 const Cache = {
   store: {},
-  set(key, data, ttl = 30000) {
+  set(key, data, ttl = 300000) {  // 5分にキャッシュTTL延長
     this.store[key] = { data, expires: Date.now() + ttl };
   },
   get(key) {
@@ -1076,6 +1094,24 @@ const Cache = {
 function warmupGAS() {
   fetch(`${CONFIG.GAS_URL}?action=ping&token=`)
     .catch(() => {});
+}
+
+
+// ============================================================
+//  GASウォームアップ — 起動時にpingを送って速度改善
+// ============================================================
+function warmupGAS() {
+  // ping送信
+  fetch(`${CONFIG.GAS_URL}?action=ping&token=`)
+    .catch(() => {});
+  // ログイン後、getAllSchedulesの先読みを非同期で実行
+  setTimeout(() => {
+    if (Auth.isLoggedIn() && !Auth.isViewer()) {
+      API.getAllSchedules().then(res => {
+        Cache.set("allSchedules", res.data || []);
+      }).catch(() => {});
+    }
+  }, 500);
 }
 
 // ---------- 起動 ----------
