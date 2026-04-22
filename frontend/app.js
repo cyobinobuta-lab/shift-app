@@ -130,10 +130,11 @@ function initApp() {
     Router.go("screen-calendar");
   } else {
     buildNav([
-      { id: "screen-home",     label: "ホーム",    icon: "grid" },
-      { id: "screen-register", label: "登録",      icon: "plus" },
-      { id: "screen-calendar", label: "カレンダー", icon: "cal" },
-      { id: "screen-my-list",  label: "一覧",      icon: "list" },
+      { id: "screen-home",         label: "ホーム",    icon: "grid" },
+      { id: "screen-register",     label: "登録",      icon: "plus" },
+      { id: "screen-calendar",     label: "カレンダー", icon: "cal" },
+      { id: "screen-admin-date",   label: "日付別",    icon: "list" },
+      { id: "screen-my-list",      label: "自分",      icon: "list" },
     ]);
     Router.go("screen-home");
   }
