@@ -768,7 +768,7 @@ Screen.AdminDate = {
 
   render() {
     const futureDates = Object.keys(this.futureData || {}).sort();
-    const pastDates = this.pastData ? Object.keys(this.pastData).sort().reverse() : [];
+    const pastDates = this.pastData ? Object.keys(this.pastData).sort() : [];
 
     // 過去を見るボタン部分
     const pastBtnHTML = `
