@@ -131,10 +131,10 @@ function initApp() {
   } else {
     buildNav([
       { id: "screen-home",         label: "ホーム",    icon: "grid" },
-      { id: "screen-register",     label: "登録",      icon: "plus" },
       { id: "screen-calendar",     label: "カレンダー", icon: "cal" },
       { id: "screen-admin-date",   label: "日付別",    icon: "list" },
       { id: "screen-my-list",      label: "自分",      icon: "list" },
+      { id: "screen-register",     label: "登録",      icon: "plus" },
     ]);
     Router.go("screen-home");
   }
@@ -178,13 +178,12 @@ Screen.Home = {
       const data = res.data || [];
       const total = data.reduce((s, r) => s + r.hours, 0);
 
-      $("home-month-total").textContent = `${Math.round(total * 10) / 10}h`;
-      $("home-month-label").textContent = `${month.replace("-","年")}月 · ${data.length}日登録`;
-
-      // 累計
-      // 今月の日数表示
-      $("home-all-total").textContent = `${data.length}日`;
-      $("home-days-label").textContent = `${month.replace("-","年")}月 登録済み`;
+      // 左カード：出勤日数
+      $("home-month-total").textContent = `${data.length}日`;
+      $("home-month-label").textContent = `${month.replace("-","年")}月 出勤日数`;
+      // 右カード：登録時間
+      $("home-all-total").textContent = `${Math.round(total * 10) / 10}h`;
+      $("home-days-label").textContent = `${month.replace("-","年")}月 登録時間`;
 
       // 直近30件
       const recent = data.slice(-30).reverse();
@@ -211,6 +210,13 @@ Screen.Register = {
     $("reg-start").value = params.startTime || "";
     $("reg-end").value   = params.endTime   || "";
     $("reg-note").value  = params.note      || "";
+    // 業務メモ（管理者のみ）
+    const memoGroup = $("reg-business-memo-group");
+    if (memoGroup) {
+      memoGroup.style.display = Auth.isAdmin() ? "block" : "none";
+      const memoInput = $("reg-business-memo");
+      if (memoInput) memoInput.value = params.businessMemo || "";
+    }
     $("reg-submit-label").textContent = this.editingId ? "更新する" : "登録する";
     this.calcPreview();
 
@@ -244,6 +250,7 @@ Screen.Register = {
     const startTime = $("reg-start").value;
     const endTime   = $("reg-end").value;
     const note      = $("reg-note").value;
+    const businessMemo = (Auth.isAdmin() && $("reg-business-memo")) ? $("reg-business-memo").value : "";
 
     if (!workDate || !startTime || !endTime) {
       showToast("日付・開始時間・終了時間は必須です", "error");
@@ -255,11 +262,11 @@ Screen.Register = {
     showLoading(true);
     try {
       if (this.editingId) {
-        await API.updateSchedule({ recordId: this.editingId, workDate, startTime, endTime, note });
+        await API.updateSchedule({ recordId: this.editingId, workDate, startTime, endTime, note, businessMemo });
         Cache.clear();
         showToast("更新しました");
       } else {
-        await API.addSchedule({ workDate, startTime, endTime, note });
+        await API.addSchedule({ workDate, startTime, endTime, note, businessMemo });
         Cache.clear();
         showToast("登録しました");
       }
@@ -325,13 +332,14 @@ Screen.Calendar = {
   async load() {
     showLoading(true);
     try {
-      const cached = Cache.get("allSchedules");
+      const cacheKey = "schedules:all";
+    const cached = Cache.get(cacheKey);
       let res;
       if (cached) {
         res = { data: cached };
       } else {
         res = await API.getAllSchedules();
-        if (res.data) Cache.set("allSchedules", res.data);
+        if (res.data) Cache.set(cacheKey, res.data);
       }
       this.allSchedules = res.data || [];
 
@@ -738,9 +746,9 @@ Screen.AdminDashboard = {
 //  Screen.AdminDate — 日付別一覧
 // ============================================================
 Screen.AdminDate = {
-  // 過去〜未来まで全期間表示
+  // 今日〜未来60日を表示
   async load() {
-    const from = fmtDate(new Date(new Date().setDate(new Date().getDate() - 30)));
+    const from = todayJST();
     const to   = fmtDate(new Date(new Date().setDate(new Date().getDate() + 60)));
     showLoading(true);
     try {
@@ -788,7 +796,7 @@ function adminScheduleItemHTML(r) {
   const tagCls = r.hours >= 7 ? "tag-full" : (r.endTime||"") <= "12:30" ? "tag-am" : (r.startTime||"") >= "12:30" ? "tag-pm" : "tag-custom";
   const tagLabel = r.hours >= 7 ? "1日" : (r.endTime||"") <= "12:30" ? "午前" : (r.startTime||"") >= "12:30" ? "午後" : "カスタム";
 
-  return `<div class="schedule-item">
+  return `<div class="schedule-item" onclick="showScheduleDetail('${r.recordId}','${r.name}','${r.workDate}','${(r.startTime||'').substring(0,5)}','${(r.endTime||'').substring(0,5)}','${r.hours}','${(r.note||'').replace(/'/g,'\\\'')}','${(r.businessMemo||'').replace(/'/g,'\\\'')}')" style="cursor:pointer">
     <div class="sched-date-box">
       <span class="sched-month">${mo}月</span>
       <span class="sched-day">${dd}</span>
@@ -797,20 +805,67 @@ function adminScheduleItemHTML(r) {
     <div class="sched-info">
       <div class="sched-who">${r.name}</div>
       <div class="sched-time">${startDisp} 〜 ${endDisp}</div>
-      <div class="sched-hours">${r.hours.toFixed(1)}時間${r.note ? " · " + r.note : ""}</div>
+      <div class="sched-hours">${r.hours.toFixed(1)}時間${r.note ? " · " + r.note : ""}${r.businessMemo ? " 🔧" : ""}</div>
     </div>
-    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px" onclick="event.stopPropagation()">
       <span class="sched-tag ${tagCls}">${tagLabel}</span>
       ${Auth.isAdmin() ? `
-      <button class="btn-sm btn-outline" onclick="adminEditSchedule('${r.recordId}','${r.workDate}','${r.startTime}','${r.endTime}','${r.note||""}','${r.employeeId}','${r.name}')">編集</button>
-      <button class="btn-sm btn-danger" onclick="adminDeleteSchedule('${r.recordId}')">削除</button>
+      <button class="btn-sm btn-outline" onclick="event.stopPropagation();adminEditSchedule('${r.recordId}','${r.workDate}','${r.startTime}','${r.endTime}','${(r.note||'').replace(/'/g,'\\\'')}','${r.employeeId}','${r.name}','${(r.businessMemo||'').replace(/'/g,'\\\'')}')">編集</button>
+      <button class="btn-sm btn-danger" onclick="event.stopPropagation();adminDeleteSchedule('${r.recordId}')">削除</button>
       ` : ""}
     </div>
   </div>`;
 }
 
+// スケジュール詳細表示
+function showScheduleDetail(recordId, name, workDate, startTime, endTime, hours, note, businessMemo) {
+  const parts = (workDate || "").split("-");
+  const y = parseInt(parts[0])||2026, mo = parseInt(parts[1])||1, dd = parseInt(parts[2])||1;
+  const d = new Date(y, mo - 1, dd);
+  const days = ["日","月","火","水","木","金","土"];
+  const dateLabel = `${mo}月${dd}日（${days[d.getDay()]}）`;
+  
+  let modal = document.getElementById("schedule-detail-modal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "schedule-detail-modal";
+    modal.style.cssText = "display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:5000;align-items:center;justify-content:center;padding:20px";
+    modal.onclick = function(e) { if (e.target === modal) modal.style.display = "none"; };
+    document.body.appendChild(modal);
+  }
+  
+  modal.innerHTML = `
+    <div style="background:white;border-radius:12px;padding:24px;max-width:400px;width:100%;box-shadow:0 4px 24px rgba(0,0,0,0.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid #eee;padding-bottom:12px">
+        <h2 style="font-size:18px;margin:0;color:#333">${name}</h2>
+        <button onclick="document.getElementById('schedule-detail-modal').style.display='none'" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;padding:0;width:30px;height:30px">×</button>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:12px;color:#888;margin-bottom:4px">📅 日付</div>
+        <div style="font-size:15px;font-weight:600">${dateLabel}</div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:12px;color:#888;margin-bottom:4px">⏰ 時間</div>
+        <div style="font-size:15px;font-weight:600">${startTime} 〜 ${endTime} (${parseFloat(hours).toFixed(1)}時間)</div>
+      </div>
+      ${note ? `
+      <div style="margin-bottom:12px">
+        <div style="font-size:12px;color:#888;margin-bottom:4px">📝 備考</div>
+        <div style="font-size:14px;color:#333;background:#f8f9fa;padding:8px;border-radius:6px">${note}</div>
+      </div>` : ""}
+      ${businessMemo ? `
+      <div style="margin-bottom:12px">
+        <div style="font-size:12px;color:#d35400;margin-bottom:4px">🔧 業務メモ</div>
+        <div style="font-size:14px;color:#333;background:#fff3cd;padding:8px;border-radius:6px;border-left:3px solid #d35400">${businessMemo}</div>
+      </div>` : ""}
+      <button onclick="document.getElementById('schedule-detail-modal').style.display='none'" style="width:100%;padding:12px;background:#0084ff;color:white;border:none;border-radius:8px;font-weight:600;cursor:pointer;margin-top:8px">閉じる</button>
+    </div>
+  `;
+  modal.style.display = "flex";
+}
+
 // 管理者による編集
-function adminEditSchedule(recordId, workDate, startTime, endTime, note, employeeId, name) {
+function adminEditSchedule(recordId, workDate, startTime, endTime, note, employeeId, name, businessMemo) {
   const newDate  = prompt("日付（例：2026-04-25）", workDate);
   if (!newDate) return;
   const newStart = prompt("開始時間（例：09:00）", startTime.substring(0,5));
@@ -818,9 +873,10 @@ function adminEditSchedule(recordId, workDate, startTime, endTime, note, employe
   const newEnd   = prompt("終了時間（例：17:00）", endTime.substring(0,5));
   if (!newEnd) return;
   const newNote  = prompt("備考（任意）", note);
+  const newMemo  = prompt("🔧 業務メモ（任意）\n例：太陽建機 中津、警備、ドローン散布", businessMemo || "");
 
   showLoading(true);
-  API.updateSchedule({ recordId, workDate: newDate, startTime: newStart, endTime: newEnd, note: newNote || "" })
+  API.updateSchedule({ recordId, workDate: newDate, startTime: newStart, endTime: newEnd, note: newNote || "", businessMemo: newMemo || "" })
     .then(() => { Cache.clear(); showToast("更新しました"); Screen.AdminDate.load(); })
     .catch(e => showToast(e.message, "error"))
     .finally(() => showLoading(false));
