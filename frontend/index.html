@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
-<link rel="stylesheet" href="style.css?v=25">
+<link rel="stylesheet" href="style.css?v=27">
 </head>
 <body>
 
@@ -109,6 +109,10 @@
         <div class="form-row" style="margin-bottom:0">
           <label class="form-label">備考（任意）</label>
           <input class="form-input" id="reg-note" type="text" placeholder="例：午後は用事があるため早退">
+        </div>
+        <div class="form-row" id="reg-business-memo-group" style="display:none;margin-top:12px;margin-bottom:0">
+          <label class="form-label" style="color:#d35400">🔧 業務メモ（管理者のみ）</label>
+          <input class="form-input" id="reg-business-memo" type="text" placeholder="例：太陽建機 中津、警備、ドローン散布">
         </div>
       </div>
       <button class="btn-primary" onclick="Screen.Register.submit()">
@@ -285,8 +289,8 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
-<script src="config.js?v=25"></script>
-<script src="api.js?v=25"></script>
-<script src="app.js?v=25"></script>
+<script src="config.js?v=27"></script>
+<script src="api.js?v=27"></script>
+<script src="app.js?v=27"></script>
 </body>
 </html>
