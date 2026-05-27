@@ -178,14 +178,11 @@ Screen.Home = {
       const data = res.data || [];
       const total = data.reduce((s, r) => s + r.hours, 0);
 
-      // 左カード：出勤日数
       $("home-month-total").textContent = `${data.length}日`;
       $("home-month-label").textContent = `${month.replace("-","年")}月 出勤日数`;
-      // 右カード：登録時間
       $("home-all-total").textContent = `${Math.round(total * 10) / 10}h`;
       $("home-days-label").textContent = `${month.replace("-","年")}月 登録時間`;
 
-      // 直近30件
       const recent = data.slice(-30).reverse();
       $("home-recent").innerHTML = recent.length === 0
         ? `<p style="color:var(--color-text-secondary);font-size:13px;text-align:center;padding:12px 0">まだ登録がありません</p>`
@@ -210,7 +207,6 @@ Screen.Register = {
     $("reg-start").value = params.startTime || "";
     $("reg-end").value   = params.endTime   || "";
     $("reg-note").value  = params.note      || "";
-    // 業務メモ（管理者のみ）
     const memoGroup = $("reg-business-memo-group");
     if (memoGroup) {
       memoGroup.style.display = Auth.isAdmin() ? "block" : "none";
@@ -220,7 +216,6 @@ Screen.Register = {
     $("reg-submit-label").textContent = this.editingId ? "更新する" : "登録する";
     this.calcPreview();
 
-    // クイックボタン
     const presets = CONFIG.QUICK_PRESETS;
     $("quick-btns").innerHTML = presets.map((p, i) => `
       <button class="quick-btn" onclick="Screen.Register.selectPreset(${i})">
@@ -344,11 +339,9 @@ Screen.Calendar = {
       this.allSchedules = res.data || [];
 
       if (Auth.isAdmin()) {
-        // 管理者はgetEmployeesで全員取得（閲覧者除く）
         const empRes = await API.getEmployees();
         this.employees = (empRes.data || []).filter(e => e.role !== "viewer");
       } else {
-        // 一般従業員・閲覧者はスケジュールデータから従業員一覧を生成
         const empMap = {};
         (this.allSchedules || []).forEach(s => {
           if (!empMap[s.employeeId]) {
@@ -434,7 +427,6 @@ Screen.Calendar = {
     const isAdmin = Auth.isAdmin();
 
     let html = "";
-    // 全員ボタン（先頭）
     const allSel = this.selEmp === null;
     html += `<div class="av-item" onclick="Screen.Calendar.selectEmp(null)">
       <div class="av-ring${allSel?" av-sel":""}">
@@ -447,7 +439,6 @@ Screen.Calendar = {
       const sel = this.selEmp === emp.employeeId;
       const c = this.getEmpColor(emp.employeeId);
       const init = emp.name.charAt(0);
-      // 管理者はタップで詳細、それ以外はフィルター
       const tapFn = isAdmin
         ? `Screen.Calendar.showEmpDetail('${emp.employeeId}')`
         : `Screen.Calendar.selectEmp('${emp.employeeId}')`;
@@ -465,12 +456,9 @@ Screen.Calendar = {
     this.selEmp = (this.selEmp === id) ? null : id;
     this.renderAvatars();
     this.renderCalendar();
-    // 詳細パネルを閉じる
     const p = $("cal-emp-detail");
     if (p) p.style.display = "none";
   },
-
-
 
   renderCalendar() {
     const days = this.getDays();
@@ -634,9 +622,6 @@ Screen.Calendar = {
   },
 };
 
-
-
-// 管理者: 従業員詳細モーダル
 Screen.Calendar.showEmpDetail = function(empId) {
   const emp = this.employees.find(e => e.employeeId === empId);
   if (!emp) return;
@@ -689,8 +674,6 @@ Screen.Calendar.showEmpDetail = function(empId) {
     </div>`;
 };
 
-
-// セルクリック：登録可能なら登録フォームへ
 Screen.Calendar.cellClick = function(dateStr, e) {
   if (e) e.stopPropagation();
   if (!Auth.isViewer()) {
@@ -698,7 +681,6 @@ Screen.Calendar.cellClick = function(dateStr, e) {
   }
 };
 
-// カレンダーのセルから登録（後方互換）
 Screen.Calendar.addFromCell = function(dateStr) {
   Router.go("screen-register", { workDate: dateStr });
 };
@@ -722,7 +704,6 @@ Screen.AdminDashboard = {
       $("admin-total-hours").textContent = `${Math.round(totalH * 10) / 10}h`;
       $("admin-month-label").textContent = `${month.replace("-","年")}月`;
 
-      // 従業員別ランキング
       const sorted = [...summary].sort((a, b) => b.totalHours - a.totalHours);
       $("admin-emp-summary").innerHTML = sorted.map((s, i) => `
         <div class="emp-row">
@@ -743,9 +724,13 @@ Screen.AdminDashboard = {
 };
 
 // ============================================================
-//  Screen.AdminDate — 日付別一覧
+//  Screen.AdminDate — 日付別一覧（過去を見るボタン追加）
 // ============================================================
 Screen.AdminDate = {
+  showPast: false,
+  pastData: null,
+  futureData: null,
+
   // 今日〜未来60日を表示
   async load() {
     const from = todayJST();
@@ -761,31 +746,85 @@ Screen.AdminDate = {
         res = await API.getSchedulesByDate(from, to);
         if (res.data) Cache.set(cacheKey, res.data);
       }
-      const byDate = res.data || {};
-      const dates = Object.keys(byDate).sort();
-
-      $("admin-date-list").innerHTML = dates.length === 0
-        ? `<p style="color:var(--color-text-secondary);font-size:13px;text-align:center;padding:20px 0">登録がありません</p>`
-        : dates.map(ds => {
-            const shifts = byDate[ds];
-            const dayTotal = shifts.reduce((s, r) => s + r.hours, 0);
-            return `<div class="date-group">
-              <div class="date-group-head">
-                <span class="date-group-title">${fmtJP(ds)}</span>
-                <span class="date-badge">${shifts.length}人 / ${Math.round(dayTotal * 10) / 10}h</span>
-              </div>
-              ${shifts.map(r => adminScheduleItemHTML(r)).join("")}
-            </div>`;
-          }).join("");
+      this.futureData = res.data || {};
+      this.render();
     } catch(e) {
       showToast(e.message, "error");
     } finally {
       showLoading(false);
     }
+  },
+
+  buildDateGroup(ds, shifts) {
+    const dayTotal = shifts.reduce((s, r) => s + r.hours, 0);
+    return `<div class="date-group">
+      <div class="date-group-head">
+        <span class="date-group-title">${fmtJP(ds)}</span>
+        <span class="date-badge">${shifts.length}人 / ${Math.round(dayTotal * 10) / 10}h</span>
+      </div>
+      ${shifts.map(r => adminScheduleItemHTML(r)).join("")}
+    </div>`;
+  },
+
+  render() {
+    const futureDates = Object.keys(this.futureData || {}).sort();
+    const pastDates = this.pastData ? Object.keys(this.pastData).sort().reverse() : [];
+
+    // 過去を見るボタン部分
+    const pastBtnHTML = `
+      <div style="margin-bottom:12px">
+        <button onclick="Screen.AdminDate.togglePast()" 
+          style="width:100%;padding:10px;background:#f8f9fa;color:#666;border:1px dashed #ccc;border-radius:8px;cursor:pointer;font-size:13px">
+          ${this.showPast ? "▲ 過去を隠す" : "▼ 過去を見る（過去60日）"}
+        </button>
+        ${this.showPast ? `
+          <div style="margin-top:12px;padding:8px;background:#fafafa;border-radius:8px">
+            ${pastDates.length === 0 
+              ? `<p style="color:var(--color-text-secondary);font-size:13px;text-align:center;padding:12px 0">過去60日に登録はありません</p>`
+              : pastDates.map(ds => this.buildDateGroup(ds, this.pastData[ds])).join("")
+            }
+          </div>
+        ` : ""}
+      </div>
+    `;
+
+    // これからの登録
+    const futureHTML = futureDates.length === 0
+      ? `<p style="color:var(--color-text-secondary);font-size:13px;text-align:center;padding:20px 0">これからの登録はありません</p>`
+      : futureDates.map(ds => this.buildDateGroup(ds, this.futureData[ds])).join("");
+
+    $("admin-date-list").innerHTML = pastBtnHTML + futureHTML;
+  },
+
+  async togglePast() {
+    if (!this.showPast && !this.pastData) {
+      // 初回のみGASから読み込み
+      showLoading(true);
+      try {
+        const from = fmtDate(new Date(new Date().setDate(new Date().getDate() - 60)));
+        const yesterday = fmtDate(new Date(new Date().setDate(new Date().getDate() - 1)));
+        const cacheKey = "schedByDate:" + from + "-" + yesterday;
+        let res;
+        const cached = Cache.get(cacheKey);
+        if (cached) {
+          res = { data: cached };
+        } else {
+          res = await API.getSchedulesByDate(from, yesterday);
+          if (res.data) Cache.set(cacheKey, res.data);
+        }
+        this.pastData = res.data || {};
+      } catch(e) {
+        showToast(e.message, "error");
+        return;
+      } finally {
+        showLoading(false);
+      }
+    }
+    this.showPast = !this.showPast;
+    this.render();
   }
 };
 
-// 管理者用スケジュール行（編集・削除ボタン付き）
 function adminScheduleItemHTML(r) {
   const parts = (r.workDate || "").split("-");
   const y = parseInt(parts[0])||2026, mo = parseInt(parts[1])||1, dd = parseInt(parts[2])||1;
@@ -817,7 +856,6 @@ function adminScheduleItemHTML(r) {
   </div>`;
 }
 
-// スケジュール詳細表示
 function showScheduleDetail(recordId, name, workDate, startTime, endTime, hours, note, businessMemo) {
   const parts = (workDate || "").split("-");
   const y = parseInt(parts[0])||2026, mo = parseInt(parts[1])||1, dd = parseInt(parts[2])||1;
@@ -864,7 +902,6 @@ function showScheduleDetail(recordId, name, workDate, startTime, endTime, hours,
   modal.style.display = "flex";
 }
 
-// 管理者による編集
 function adminEditSchedule(recordId, workDate, startTime, endTime, note, employeeId, name, businessMemo) {
   const newDate  = prompt("日付（例：2026-04-25）", workDate);
   if (!newDate) return;
@@ -882,13 +919,11 @@ function adminEditSchedule(recordId, workDate, startTime, endTime, note, employe
     .finally(() => showLoading(false));
 }
 
-// 管理者による削除
 async function adminDeleteSchedule(recordId) {
   if (!confirm("この登録を削除しますか？")) return;
   showLoading(true);
   try {
     await API.deleteSchedule(recordId);
-    Cache.clear();
     Cache.clear();
     showToast("削除しました");
     Screen.AdminDate.load();
@@ -1012,7 +1047,6 @@ Screen.AdminEmployees = {
   }
 };
 
-
 // ============================================================
 //  Screen.AdminLogs — 操作履歴
 // ============================================================
@@ -1025,7 +1059,7 @@ Screen.AdminLogs = {
       $("admin-logs-list").innerHTML = logs.length === 0
         ? `<p style="color:var(--color-text-secondary);font-size:13px;text-align:center;padding:20px 0">履歴がありません</p>`
         : logs.map(log => {
-            const dt = log.createdAt ? log.createdAt.substring(0,16).replace("T"," ") : "";
+            const dt = log.createdAt ? String(log.createdAt).substring(0,16).replace("T"," ") : "";
             const color = log.action === "登録" ? "#1D9E75" : log.action === "編集" ? "#185FA5" : "#A32D2D";
             const bg    = log.action === "登録" ? "#E1F5EE" : log.action === "編集" ? "#E6F1FB" : "#FCEBEB";
             return `<div class="log-row">
@@ -1036,7 +1070,7 @@ Screen.AdminLogs = {
               </div>
               <div class="log-time">${dt}</div>
             </div>`;
-          }).join("");
+          }).join("")}
     } catch(e) {
       showToast(e.message, "error");
     } finally {
@@ -1049,7 +1083,6 @@ Screen.AdminLogs = {
 //  共通 — スケジュールアイテムHTML
 // ============================================================
 function scheduleItemHTML(r, compact = false, showActions = false, showName = false) {
-  // タイムゾーンずれを防ぐためにYYYY-MM-DDを直接パース
   const parts = (r.workDate || "").split("-");
   const y = parseInt(parts[0])||2026, mo = parseInt(parts[1])||1, dd = parseInt(parts[2])||1;
   const d = new Date(y, mo - 1, dd);
@@ -1107,10 +1140,6 @@ async function handleLogout() {
   }
 }
 
-
-// ============================================================
-//  パスワード表示切り替え
-// ============================================================
 function togglePass() {
   const inp = document.getElementById("login-pass");
   const btn = document.getElementById("pass-toggle");
@@ -1126,11 +1155,11 @@ function togglePass() {
 }
 
 // ============================================================
-//  キャッシュ — GASへのリクエストを減らして速度改善
+//  キャッシュ
 // ============================================================
 const Cache = {
   store: {},
-  set(key, data, ttl = 300000) {  // 5分にキャッシュTTL延長
+  set(key, data, ttl = 300000) {
     this.store[key] = { data, expires: Date.now() + ttl };
   },
   get(key) {
@@ -1145,22 +1174,10 @@ const Cache = {
 };
 
 // ============================================================
-//  GASウォームアップ — 起動時にpingを送って速度改善
+//  GASウォームアップ
 // ============================================================
 function warmupGAS() {
-  fetch(`${CONFIG.GAS_URL}?action=ping&token=`)
-    .catch(() => {});
-}
-
-
-// ============================================================
-//  GASウォームアップ — 起動時にpingを送って速度改善
-// ============================================================
-function warmupGAS() {
-  // ping送信
-  fetch(`${CONFIG.GAS_URL}?action=ping&token=`)
-    .catch(() => {});
-  // ログイン後、getAllSchedulesの先読みを非同期で実行
+  fetch(`${CONFIG.GAS_URL}?action=ping&token=`).catch(() => {});
   setTimeout(() => {
     if (Auth.isLoggedIn() && !Auth.isViewer()) {
       API.getAllSchedules().then(res => {
